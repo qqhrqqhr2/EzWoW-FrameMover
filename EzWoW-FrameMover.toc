@@ -1,0 +1,34 @@
+## Interface: 16001
+## X-Curse-Project-ID: 1755569
+## Title: EzWoW - Frame Mover
+## Title-enUS: EzWoW - Frame Mover
+## Title-koKR: EzWoW - Frame Mover
+## Title-deDE: EzWoW - Frame Mover
+## Title-frFR: EzWoW - Frame Mover
+## Title-esES: EzWoW - Frame Mover
+## Title-esMX: EzWoW - Frame Mover
+## Title-ruRU: EzWoW - Frame Mover
+## Title-zhCN: EzWoW - Frame Mover
+## Title-zhTW: EzWoW - Frame Mover
+## Notes: Freely drag, save positions, and Ctrl+Wheel resize standard game windows. (/ezfm)
+## Notes-enUS: Freely drag, save positions, and Ctrl+Wheel resize standard game windows. (/ezfm)
+## Notes-koKR: 기본 게임 UI 창을 마우스 드래그로 자유롭게 이동·저장하고 Ctrl+마우스 휠로 크기를 조절합니다. (/ezfm, /창이동)
+## Notes-deDE: Standardfenster frei verschieben, Positionen speichern und mit Strg+Mausrad skalieren. (/ezfm)
+## Notes-frFR: Déplacez librement les fenêtres du jeu, sauvegardez leur position et redimensionnez-les avec Ctrl+Molette. (/ezfm)
+## Notes-esES: Arrastra libremente las ventanas del juego, guarda su posición y cambia su escala con Ctrl+Rueda. (/ezfm)
+## Notes-esMX: Arrastra libremente las ventanas del juego, guarda su posición y cambia su escala con Ctrl+Rueda. (/ezfm)
+## Notes-ruRU: Свободное перемещение стандартных окон игры, сохранение позиций и изменение масштаба через Ctrl+Колесо. (/ezfm)
+## Notes-zhCN: 自由拖拽移动默认界面窗口、保存位置并通过 Ctrl+滚轮缩放窗口大小。(/ezfm)
+## Notes-zhTW: 自由拖曳移動預設介面視窗、儲存位置並透過 Ctrl+滾輪縮放視窗大小。(/ezfm)
+## Author: qqhrqqhr2
+## Version: 2.0.1
+## IconTexture: Interface\AddOns\EzWoW-FrameMover\Media\Icon
+## SavedVariables: EzWoW_FrameMoverDB
+
+Core\Locales.lua
+Core\UIKit.lua
+Data\StandardFrames.lua
+Core\Init.lua
+Modules\MoverEngine.lua
+UI\QuestTracker.lua
+UI\OptionsWindow.lua

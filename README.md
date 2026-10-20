@@ -1,5 +1,10 @@
 # EzWoW - Frame Mover (`EzWoW-FrameMover`)
 
+## CurseForge
+
+- **Project ID / 프로젝트 ID:** `1755569`
+- **Project page / 프로젝트 페이지:** [EzWoW-FrameMover](https://www.curseforge.com/wow/addons/ezwow-frame-mover)
+
 **[한국어](#한국어) · [English](#english)**
 
 WoW Forever (`Interface: 16001`) · `/ezfm`

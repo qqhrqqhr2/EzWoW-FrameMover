@@ -192,3 +192,13 @@ Frame Mover lets you **drag Blizzard's fixed windows anywhere** and remembers wh
 ### Saved data
 
 - `EzWoW_FrameMoverDB`: settings, per-window positions and scales, tracker size, collapsed and hidden quests.
+
+---
+
+## Support / 후원
+
+If you find this addon useful, you can support its development.
+
+애드온이 도움이 되셨다면 개발 후원으로 응원해 주세요.
+
+[Buy Me a Coffee ☕](https://buymeacoffee.com/qqhrqqhr2)

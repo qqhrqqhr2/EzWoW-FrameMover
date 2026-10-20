@@ -813,7 +813,7 @@ function ns:ResetQuestTrackerPosition(silent)
     ObjectiveTrackerController.commitSavedTrackerTransform()
     self:UpdateQuestTracker()
     if not silent then
-        self:PrintMsg(string.format(self:L("MSG_SINGLE_RESET"), "Quest Tracker"))
+        self:PrintMsg(string.format(self:L("MSG_SINGLE_RESET"), self:L("TRACKER_TITLE")))
     end
 end
 
@@ -854,7 +854,7 @@ function ObjectiveTrackerController.onTrackerMouseWheel(_, delta)
         savedDB.trackerScale = math.abs(nextScale - 1.0) < 0.005 and nil or nextScale
         ObjectiveTrackerController.commitSavedTrackerTransform()
         if ns.ShowScaleToast then
-            ns:ShowScaleToast("Quest Tracker", math.floor(nextScale * 100 + 0.5))
+            ns:ShowScaleToast(ns:L("TRACKER_TITLE"), math.floor(nextScale * 100 + 0.5))
         end
         return
     end
@@ -886,7 +886,7 @@ function ObjectiveTrackerController.handleQuickResetClick(button)
         ObjectiveTrackerController.commitSavedTrackerTransform()
         ns:UpdateQuestTracker()
         if ns.ShowScaleToast then
-            ns:ShowScaleToast("Quest Tracker", 100)
+            ns:ShowScaleToast(ns:L("TRACKER_TITLE"), 100)
         end
         return true
     end
@@ -1095,7 +1095,7 @@ function ObjectiveTrackerController.attachResizeHandlers(handle, mode)
             local cxVal = self:GetCenter() or 0
             local swVal = (UIParent and UIParent:GetWidth()) or 1920
             GameTooltip:SetOwner(self, cxVal < (swVal * 0.5) and "ANCHOR_RIGHT" or "ANCHOR_LEFT")
-            GameTooltip:SetText(ns:L("SECTION_TRACKER"), STYLE.accent[1], STYLE.accent[2], STYLE.accent[3])
+            GameTooltip:SetText(ns:L("TRACKER_TITLE"), STYLE.accent[1], STYLE.accent[2], STYLE.accent[3])
             GameTooltip:AddLine(ns:L("TRACKER_TT_RESIZE"), STYLE.text[1], STYLE.text[2], STYLE.text[3])
             GameTooltip:Show()
         end
@@ -1244,7 +1244,8 @@ function ObjectiveTrackerController.prepareTrackerFrame()
             local cxVal = self:GetCenter() or 0
             local swVal = (UIParent and UIParent:GetWidth()) or 1920
             GameTooltip:SetOwner(self, cxVal < (swVal * 0.5) and "ANCHOR_RIGHT" or "ANCHOR_LEFT")
-            GameTooltip:SetText(ns:L("SECTION_TRACKER"), STYLE.accent[1], STYLE.accent[2], STYLE.accent[3])
+            GameTooltip:SetText(ns:L("TRACKER_TITLE"), STYLE.accent[1], STYLE.accent[2], STYLE.accent[3])
+            GameTooltip:AddLine(ns:L("SECTION_TRACKER"), STYLE.textSub[1], STYLE.textSub[2], STYLE.textSub[3])
             GameTooltip:AddLine(ns:L("TRACKER_TT_HEADER_LCLICK"), STYLE.text[1], STYLE.text[2], STYLE.text[3])
             GameTooltip:AddLine(ns:L("TRACKER_TT_HEADER_RCLICK"), STYLE.textSub[1], STYLE.textSub[2], STYLE.textSub[3])
             GameTooltip:AddLine(ns:L("TT_DRAG_MOVE"), STYLE.textSub[1], STYLE.textSub[2], STYLE.textSub[3])

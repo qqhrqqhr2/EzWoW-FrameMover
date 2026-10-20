@@ -80,7 +80,7 @@ WoW Forever (`Interface: 16001`) · `/ezfm`
 | ② | 창이 화면 밖으로 벗어나지 않도록 제한 | 켬 |
 | ② | 창 위에서 우클릭 단축키로 위치·크기 빠른 초기화 허용 | 켬 |
 | ② | 창에 마우스오버 시 조작 기능 설명 툴팁 표시 | 켬 |
-| ③ | 화면에 수행 중인 퀘스트 추적 목록(Tracker) 표시 | 켬 |
+| ③ | 프레임 무버 퀘스트 추적기 사용 (끄면 게임 기본 추적창 사용) · 끄면 아래 추적기 옵션은 비활성화 | 켬 |
 | ③ | 기본 게임의 우측 퀘스트 추적창 숨기기 | 켬 |
 | ③ | 수행 중인 모든 퀘스트 자동 표시 (끄면 추적 체크한 퀘스트만) | 켬 |
 | ③ | 지역·분류 헤더 및 퀘스트 레벨 난이도 색상 표시 | 켬 |
@@ -172,7 +172,7 @@ Frame Mover lets you **drag Blizzard's fixed windows anywhere** and remembers wh
 | ② | Keep windows clamped inside screen boundaries | On |
 | ② | Right-click shortcuts on a window to reset its position & scale | On |
 | ② | Show control guide tooltip when hovering over a window | On |
-| ③ | Show active Quest Tracker list on screen | On |
+| ③ | Use Frame Mover quest tracker (off = game default tracker) · tracker options below are disabled while off | On |
 | ③ | Hide default game objective tracker | On |
 | ③ | Automatically show all active quests (off = watched quests only) | On |
 | ③ | Show zone headers and difficulty-colored quest levels ([Lv]) | On |

@@ -94,6 +94,15 @@ function SettingsDialog.buildSectionHeader(parent, yOffset)
     return holder
 end
 
+-- Tracker sub-options only matter while the Frame Mover tracker is in use
+function SettingsDialog.syncTrackerOptionRows(windowFrame)
+    local enabled = ns:InitializeDatabase().enableTracker ~= false
+    for _, key in ipairs({ "chkHideDefaultTracker", "chkTrackerTrackAll", "chkTrackerShowZone", "chkTrackerShowBg" }) do
+        local rowWidget = windowFrame[key]
+        if rowWidget and rowWidget.SetRowEnabled then rowWidget:SetRowEnabled(enabled) end
+    end
+end
+
 function SettingsDialog.buildFlatCheckbox(parent, x, y, onToggle)
     local rowWidget = CreateFrame("Button", nil, parent)
     rowWidget:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
@@ -141,6 +150,12 @@ function SettingsDialog.buildFlatCheckbox(parent, x, y, onToggle)
             GameTooltip:Show()
         end
     end)
+    function rowWidget:SetRowEnabled(enabled)
+        self.rowDisabled = not enabled
+        self:SetEnabled(enabled)
+        self:SetAlpha(enabled and 1 or 0.45)
+    end
+
     rowWidget:SetScript("OnLeave", function(self)
         if self.checked then
             self.box:SetBackdropBorderColor(unpack(STYLE.accent))
@@ -540,6 +555,7 @@ function ns:CreateSettingsWindow()
         local savedDB = ns:InitializeDatabase()
         savedDB.enableTracker = checked
         if ns.UpdateQuestTracker then ns:UpdateQuestTracker() end
+        SettingsDialog.syncTrackerOptionRows(windowFrame)
     end)
     windowFrame.chkHideDefaultTracker = SettingsDialog.buildFlatCheckbox(windowFrame, 20, -339, function(checked)
         local savedDB = ns:InitializeDatabase()
@@ -705,6 +721,7 @@ function ns:RefreshSettingsUI()
 
         windowFrame.chkTrackerShowBg.label:SetText(self:L("OPT_TRACKER_SHOW_BG"))
         windowFrame.chkTrackerShowBg:SetChecked(savedDB.trackerShowBg ~= false)
+        SettingsDialog.syncTrackerOptionRows(windowFrame)
 
         windowFrame.secStatus.title:SetText(self:L("SECTION_STATUS"))
         local hookedCount, posCount, scaleCount = self:ComputeManagedFrameStatistics()

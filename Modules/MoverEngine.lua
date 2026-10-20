@@ -15,7 +15,7 @@ local returnFalse = ns.AlwaysReturnFalse
 
 local ADDON_NAME, ns = ...
 
-ns.VERSION = "1.1.0"
+ns.VERSION = "2.0.1"
 ns.DONATE_URL = "https://buymeacoffee.com/qqhrqqhr2"
 
 ns.DEFAULTS = {

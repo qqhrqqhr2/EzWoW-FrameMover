@@ -132,8 +132,12 @@ function ns:SetupPointStorage(frame)
 
     local savedDB = self:InitializeDatabase()
     if savedDB.savePositions == false then
-        if not fdVal.storage.points then
+        local points = fdVal.storage.points
+        if not points then
             fdVal.storage.points = {}
+        elseif savedDB.positions and points == savedDB.positions[frameName] then
+            -- detach from SavedVariables so drags made after turning saving off stay session-only
+            fdVal.storage.points = CopyTable and CopyTable(points) or points
         end
         return true
     end

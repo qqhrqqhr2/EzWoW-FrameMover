@@ -56,6 +56,7 @@ local lastWatchedState = {}
 local hasInternalWatchEdit = false
 local watchHooksInstalled = false
 local refreshPending = false
+local defaultTrackerHiddenByUs = false
 local defaultTrackerHooked = false
 
 function ObjectiveTrackerController.hasInCombat()
@@ -696,6 +697,7 @@ function ns:ApplyDefaultTrackerVisibility()
                     ns:EnqueuePostCombatCallback(function() ns:ApplyDefaultTrackerVisibility() end)
                 else
                     pcall(f.Hide, f)
+                    defaultTrackerHiddenByUs = true
                 end
             end
         end)
@@ -705,9 +707,14 @@ function ns:ApplyDefaultTrackerVisibility()
         if defaultTracker:IsShown() then
             pcall(defaultTracker.Hide, defaultTracker)
         end
-    else
+        defaultTrackerHiddenByUs = true
+    elseif defaultTrackerHiddenByUs then
+        -- only undo our own hide; Blizzard or another tracker addon may hide it for its own reasons
+        defaultTrackerHiddenByUs = false
         if not defaultTracker:IsShown() then
             pcall(defaultTracker.Show, defaultTracker)
+            local manager = _G.ObjectiveTrackerManager
+            if manager and manager.UpdateAll then pcall(manager.UpdateAll, manager) end
         end
     end
 end

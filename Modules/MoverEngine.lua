@@ -16,7 +16,7 @@ local returnFalse = ns.AlwaysReturnFalse
 local ADDON_NAME, ns = ...
 
 ns.VERSION = "1.1.0"
-ns.DONATE_URL = "https://www.paypal.com/ncp/payment/5KM693JWNN65C"
+ns.DONATE_URL = "https://buymeacoffee.com/qqhrqqhr2"
 
 ns.DEFAULTS = {
     lang = "Auto",

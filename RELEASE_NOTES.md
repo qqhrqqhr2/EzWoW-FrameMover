@@ -1,9 +1,3 @@
-# v2.0.1
+# v2.0.2
 
-## English
-
-- Updated the in-game donation button to the official Buy Me a Coffee page.
-
-## 한국어
-
-- 게임 내 후원 버튼의 주소를 공식 Buy Me a Coffee 페이지로 변경했습니다.
+[2026-10-20 23:55] 최신 DB 적용 (Apply latest DB)

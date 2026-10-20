@@ -1,5 +1,21 @@
 # Changelog - EzWoW - Frame Mover
 
+## v2.0.0
+
+### English
+
+- Fixed window dragging offsets and initial jumps at different UI scales.
+- Added a resizable, scrollable quest tracker with zone headings, difficulty colours, objective progress and quest-item buttons.
+- Added optional Ctrl-only dragging and Alt+drag support for subwindows.
+- Added hover-help controls and selectable quick-reset shortcuts.
+
+### 한국어
+
+- UI 배율에 따라 창을 끌 때 위치가 어긋나거나 처음에 튀는 문제를 수정했습니다.
+- 지역·난이도·목표 진행도·퀘스트 아이템 버튼을 표시하는 스크롤형 추적기를 추가했습니다.
+- Ctrl을 누를 때만 이동하는 옵션과 Alt+드래그 하위 창 분리를 지원합니다.
+- 조작 안내 표시 설정과 빠른 위치 초기화 단축키 선택을 추가했습니다.
+
 ## v1.1.0
 - 드래그 시 마우스 포인터와 아이콘/프레임 좌표가 어긋나거나 벌어지는 스케일 오차(`EffectiveScale`) 및 초기 점프 현상 수정
 - **모듈 구조 재구성 (`Core/`, `Data/`, `Modules/`, `UI/`) 및 전용 퀘스트 추적기 통합**:

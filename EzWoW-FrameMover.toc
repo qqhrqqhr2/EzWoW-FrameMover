@@ -1,4 +1,5 @@
 ## Interface: 16001
+## X-Curse-Project-ID: 1755569
 ## Title: EzWoW - Frame Mover
 ## Title-enUS: EzWoW - Frame Mover
 ## Title-koKR: EzWoW - Frame Mover

@@ -56,6 +56,8 @@ function SettingsDialog.buildFlatButton(parent, width, height, text, onClick)
     formatLocalizedLabel:SetTextColor(unpack(STYLE.text))
     formatLocalizedLabel:SetText(text or "")
     actionBtn.label = formatLocalizedLabel
+    actionBtn.fitWidth = width - 8
+    ns.UIKit:FitFontString(formatLocalizedLabel, actionBtn.fitWidth, 1)
 
     actionBtn:SetScript("OnEnter", function(self)
         SettingsDialog.commitFlatBackdrop(self, STYLE.bgHover, STYLE.accent)
@@ -67,6 +69,12 @@ function SettingsDialog.buildFlatButton(parent, width, height, text, onClick)
         actionBtn:SetScript("OnClick", onClick)
     end
     return actionBtn
+end
+
+-- Sets a button / checkbox label and shrinks long translations (German, Russian, ...) to fit
+function SettingsDialog.setFittedLabel(widget, text)
+    widget.label:SetText(text or "")
+    ns.UIKit:FitFontString(widget.label, widget.fitWidth, 1)
 end
 
 function SettingsDialog.buildSectionHeader(parent, yOffset)
@@ -128,6 +136,7 @@ function SettingsDialog.buildFlatCheckbox(parent, x, y, onToggle)
     rowWidget.box = editBox
     rowWidget.fill = fill
     rowWidget.label = formatLocalizedLabel
+    rowWidget.fitWidth = 440 - 18 - 9    -- single line: rows are only 23px apart
     rowWidget.checked = false
 
     function rowWidget:SetChecked(val)
@@ -682,44 +691,44 @@ function ns:RefreshSettingsUI()
                 break
             end
         end
-        windowFrame.langBtn.label:SetText(langLabel .. "  ▾")
+        SettingsDialog.setFittedLabel(windowFrame.langBtn, langLabel .. "  ▾")
 
         windowFrame.secGeneral.title:SetText(self:L("SECTION_GENERAL"))
-        windowFrame.chkEnableMove.label:SetText(self:L("OPT_ENABLE_MOVE"))
+        SettingsDialog.setFittedLabel(windowFrame.chkEnableMove, self:L("OPT_ENABLE_MOVE"))
         windowFrame.chkEnableMove:SetChecked(savedDB.enableMove ~= false)
 
-        windowFrame.chkSavePos.label:SetText(self:L("OPT_SAVE_POS"))
+        SettingsDialog.setFittedLabel(windowFrame.chkSavePos, self:L("OPT_SAVE_POS"))
         windowFrame.chkSavePos:SetChecked(savedDB.savePositions ~= false)
 
-        windowFrame.chkRequireCtrl.label:SetText(self:L("OPT_REQUIRE_CTRL"))
+        SettingsDialog.setFittedLabel(windowFrame.chkRequireCtrl, self:L("OPT_REQUIRE_CTRL"))
         windowFrame.chkRequireCtrl:SetChecked(savedDB.requireCtrl == true)
 
-        windowFrame.chkEnableScale.label:SetText(self:L("OPT_ENABLE_SCALE"))
+        SettingsDialog.setFittedLabel(windowFrame.chkEnableScale, self:L("OPT_ENABLE_SCALE"))
         windowFrame.chkEnableScale:SetChecked(savedDB.enableScale ~= false)
 
-        windowFrame.chkClampScreen.label:SetText(self:L("OPT_CLAMP_SCREEN"))
+        SettingsDialog.setFittedLabel(windowFrame.chkClampScreen, self:L("OPT_CLAMP_SCREEN"))
         windowFrame.chkClampScreen:SetChecked(savedDB.clampToScreen ~= false)
 
-        windowFrame.chkQuickReset.label:SetText(self:L("OPT_QUICK_RESET"))
+        SettingsDialog.setFittedLabel(windowFrame.chkQuickReset, self:L("OPT_QUICK_RESET"))
         windowFrame.chkQuickReset:SetChecked(savedDB.quickReset ~= false)
 
-        windowFrame.chkShowTooltip.label:SetText(self:L("OPT_SHOW_TOOLTIP"))
+        SettingsDialog.setFittedLabel(windowFrame.chkShowTooltip, self:L("OPT_SHOW_TOOLTIP"))
         windowFrame.chkShowTooltip:SetChecked(savedDB.showTooltip ~= false)
 
         windowFrame.secTracker.title:SetText(self:L("SECTION_TRACKER"))
-        windowFrame.chkEnableTracker.label:SetText(self:L("OPT_ENABLE_TRACKER"))
+        SettingsDialog.setFittedLabel(windowFrame.chkEnableTracker, self:L("OPT_ENABLE_TRACKER"))
         windowFrame.chkEnableTracker:SetChecked(savedDB.enableTracker ~= false)
 
-        windowFrame.chkHideDefaultTracker.label:SetText(self:L("OPT_HIDE_DEFAULT_TRACKER"))
+        SettingsDialog.setFittedLabel(windowFrame.chkHideDefaultTracker, self:L("OPT_HIDE_DEFAULT_TRACKER"))
         windowFrame.chkHideDefaultTracker:SetChecked(savedDB.hideDefaultTracker ~= false)
 
-        windowFrame.chkTrackerTrackAll.label:SetText(self:L("OPT_TRACKER_ALL_QUESTS"))
+        SettingsDialog.setFittedLabel(windowFrame.chkTrackerTrackAll, self:L("OPT_TRACKER_ALL_QUESTS"))
         windowFrame.chkTrackerTrackAll:SetChecked(savedDB.trackerTrackAll ~= false)
 
-        windowFrame.chkTrackerShowZone.label:SetText(self:L("OPT_TRACKER_SHOW_ZONE"))
+        SettingsDialog.setFittedLabel(windowFrame.chkTrackerShowZone, self:L("OPT_TRACKER_SHOW_ZONE"))
         windowFrame.chkTrackerShowZone:SetChecked(savedDB.trackerShowZone ~= false)
 
-        windowFrame.chkTrackerShowBg.label:SetText(self:L("OPT_TRACKER_SHOW_BG"))
+        SettingsDialog.setFittedLabel(windowFrame.chkTrackerShowBg, self:L("OPT_TRACKER_SHOW_BG"))
         windowFrame.chkTrackerShowBg:SetChecked(savedDB.trackerShowBg ~= false)
         SettingsDialog.syncTrackerOptionRows(windowFrame)
 
@@ -729,14 +738,14 @@ function ns:RefreshSettingsUI()
         windowFrame.guideText:SetText(self:L("GUIDE_TEXT"))
 
         windowFrame.secControls.title:SetText(self:L("SECTION_CONTROLS"))
-        windowFrame.btnResetPos.label:SetText(self:L("BTN_RESET_POS"))
-        windowFrame.btnResetScale.label:SetText(self:L("BTN_RESET_SCALE"))
-        windowFrame.btnResetOpen.label:SetText(self:L("BTN_RESET_OPEN"))
-        windowFrame.btnRescan.label:SetText(self:L("BTN_RESCAN"))
+        SettingsDialog.setFittedLabel(windowFrame.btnResetPos, self:L("BTN_RESET_POS"))
+        SettingsDialog.setFittedLabel(windowFrame.btnResetScale, self:L("BTN_RESET_SCALE"))
+        SettingsDialog.setFittedLabel(windowFrame.btnResetOpen, self:L("BTN_RESET_OPEN"))
+        SettingsDialog.setFittedLabel(windowFrame.btnRescan, self:L("BTN_RESCAN"))
 
-        windowFrame.btnDefaults.label:SetText(self:L("BTN_RESET_DEFAULTS"))
+        SettingsDialog.setFittedLabel(windowFrame.btnDefaults, self:L("BTN_RESET_DEFAULTS"))
         windowFrame.footerHint:SetText(self:L("HINT_FOOTER"))
-        windowFrame.btnDonate.label:SetText(self:L("BTN_DONATE"))
+        SettingsDialog.setFittedLabel(windowFrame.btnDonate, self:L("BTN_DONATE"))
     end
 
     if self.UpdateQuestTracker then
@@ -792,7 +801,7 @@ function ns:RegisterBlizzardCanvas()
     function panelFrameEntry:RefreshTexts()
         titleStr:SetText(ns:L("ADDON_TITLE"))
         desc:SetText(ns:L("CANVAS_DESC"))
-        launchBtn.label:SetText(ns:L("CANVAS_OPEN_BTN"))
+        SettingsDialog.setFittedLabel(launchBtn, ns:L("CANVAS_OPEN_BTN"))
         slashInfo:SetText(ns:L("CANVAS_SLASH_INFO"))
     end
 

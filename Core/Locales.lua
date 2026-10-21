@@ -561,3 +561,11 @@ function ns:L(key)
     local targetTable = self.Locales[langCode] or self.Locales.enUS
     return (targetTable and targetTable[key]) or self.Locales.enUS[key] or key
 end
+
+-- Additional translations for interface messages.
+ns.Locales.deDE["TRACKER_TITLE"] = "EzWoW - Frame Mover - Questverfolgung"
+ns.Locales.frFR["TRACKER_TITLE"] = "EzWoW - Frame Mover - Suivi des quêtes"
+ns.Locales.esES["TRACKER_TITLE"] = "EzWoW - Frame Mover - Seguimiento de misiones"
+ns.Locales.ruRU["TRACKER_TITLE"] = "EzWoW - Frame Mover - Отслеживание заданий"
+ns.Locales.zhCN["TRACKER_TITLE"] = "EzWoW - Frame Mover - 任务追踪"
+ns.Locales.zhTW["TRACKER_TITLE"] = "EzWoW - Frame Mover - 任務追蹤"

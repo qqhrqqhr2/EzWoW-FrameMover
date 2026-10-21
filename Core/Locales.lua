@@ -563,6 +563,7 @@ function ns:L(key)
 end
 
 -- Additional translations for interface messages.
+ns.Locales.koKR["TRACKER_TITLE"] = "EzWoW - Frame Mover - 퀘스트 추적"
 ns.Locales.deDE["TRACKER_TITLE"] = "EzWoW - Frame Mover - Questverfolgung"
 ns.Locales.frFR["TRACKER_TITLE"] = "EzWoW - Frame Mover - Suivi des quêtes"
 ns.Locales.esES["TRACKER_TITLE"] = "EzWoW - Frame Mover - Seguimiento de misiones"

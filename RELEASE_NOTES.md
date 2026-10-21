@@ -1,4 +1,3 @@
-# v2.0.5
+# v2.0.6
 
-- 한국어 클라이언트에서 퀘스트 추적기 제목이 영어로 나오던 문제를 수정했습니다. (Translate the quest tracker title for Korean clients.)
-- 아이콘을 다른 EzWoW 애드온과 같은 스타일로 맞췄습니다. (Align the icon with the EzWoW icon family.)
+- 언어 목록에서 지금 언어가 표시되고, 설정창을 닫으면 목록도 함께 닫힙니다. (The language list marks the current language and closes with the settings window.)

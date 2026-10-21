@@ -495,32 +495,19 @@ function ns:CreateSettingsWindow()
     langBtn:SetPoint("LEFT", langLabel2, "RIGHT", 12, 0)
     windowFrame.langBtn = langBtn
 
-    local langMenu = CreateFrame("Frame", nil, windowFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
-    langMenu:SetWidth(160)
-    langMenu:SetHeight(#self.SUPPORTED_LANGS * 22 + 6)
-    langMenu:SetPoint("TOPLEFT", langBtn, "BOTTOMLEFT", 0, -2)
-    langMenu:SetFrameLevel(windowFrame:GetFrameLevel() + 30)
-    SettingsDialog.commitFlatBackdrop(langMenu, STYLE.bgMain, STYLE.accent)
-    langMenu:Hide()
-    windowFrame.langMenu = langMenu
-
-    for entryIndex, item in ipairs(self.SUPPORTED_LANGS) do
-        local itemBtn = SettingsDialog.buildFlatButton(langMenu, 154, 20, item.label, function()
+    -- click the box, then pick a language from the list
+    local langItems = {}
+    for entryIndex, item in ipairs(self.SUPPORTED_LANGS) do langItems[entryIndex] = { value = item.code, text = item.label } end
+    ns.LanguageDropdown.Attach(langBtn, {
+        items = langItems,
+        colors = { bg = STYLE.bgMain, accent = STYLE.accent },
+        get = function() return ns:InitializeDatabase().lang or "Auto" end,
+        set = function(code)
             local savedDB = ns:InitializeDatabase()
-            savedDB.lang = item.code
-            langMenu:Hide()
+            savedDB.lang = code
             ns:RefreshSettingsUI()
-        end)
-        itemBtn:SetPoint("TOP", langMenu, "TOP", 0, -3 - (entryIndex - 1) * 22)
-    end
-
-    langBtn:SetScript("OnClick", function()
-        if langMenu:IsShown() then
-            langMenu:Hide()
-        else
-            langMenu:Show()
-        end
-    end)
+        end,
+    })
 
     windowFrame.secGeneral = SettingsDialog.buildSectionHeader(windowFrame, -98)
 
@@ -664,7 +651,7 @@ function ns:CreateSettingsWindow()
         ns:RefreshSettingsUI()
     end)
     windowFrame:SetScript("OnHide", function()
-        if windowFrame.langMenu then windowFrame.langMenu:Hide() end
+        ns.LanguageDropdown.Close(windowFrame.langBtn)
         if donatePopup then donatePopup:Hide() end
     end)
 

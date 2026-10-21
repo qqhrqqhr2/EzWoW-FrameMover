@@ -32,4 +32,5 @@ Data\StandardFrames.lua
 Core\Init.lua
 Modules\MoverEngine.lua
 UI\QuestTracker.lua
+UI\LanguageDropdown.lua
 UI\OptionsWindow.lua

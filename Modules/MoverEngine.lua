@@ -427,13 +427,18 @@ end
 
 function ns:FlushPostCombatCallbackQueue()
     if hasInCombat() or #self.CombatQueue == 0 then return end
-    for index = 1, #self.CombatQueue do
-        local item = self.CombatQueue[index]
+    -- swap the queue out first so one failing callback cannot make the whole queue re-run forever
+    local pending = self.CombatQueue
+    self.CombatQueue = {}
+    for index = 1, #pending do
+        local item = pending[index]
         if item and item.func then
-            item.func(unpack(item.args))
+            local isCallOk, errMsg = pcall(item.func, unpack(item.args))
+            if not isCallOk and type(geterrorhandler) == "function" then
+                geterrorhandler()(errMsg)
+            end
         end
     end
-    wipe(self.CombatQueue)
 end
 
 function ns:EnqueueDeferredAnchorRestore(frame, framePoints)
@@ -1101,10 +1106,40 @@ function ns:ProcessFrameTree(frameName, frameData, frameParent, retried)
         return
     end
 
+    -- a few frames are listed both on their own and under a parent panel (data covers several
+    -- client UIs); once the frame is registered, only an entry that matches the panel it really
+    -- sits in may rebind it, or a tab could be dragged out of its panel depending on table order
+    local existingStorage = self.FrameData[frame] and self.FrameData[frame].storage
+    if existingStorage and existingStorage.hooked and existingStorage.frameParent ~= frameParent then
+        local actualParent = frame.GetParent and frame:GetParent()
+        local fitsThisEntry
+        if frameParent then
+            fitsThisEntry = (actualParent == frameParent)
+        else
+            fitsThisEntry = (actualParent == nil or actualParent == UIParent)
+        end
+        if not fitsThisEntry then
+            if type(frameData.SubFrames) == "table" then
+                for subFrameName, subFrameData in pairs(frameData.SubFrames) do
+                    if type(subFrameData) == "table" then
+                        self:ProcessFrameTree(subFrameName, subFrameData, frame, retried)
+                    end
+                end
+            end
+            return
+        end
+    end
+
     if hasInCombat() and (frameData.ForceUseSecureMoveHandle or frame:IsProtected()) then
-        self:EnqueuePostCombatCallback(function()
-            self:ProcessFrameTree(frameName, frameData, frameParent, retried)
-        end)
+        -- every click in combat rescans unhooked frames; queue each frame only once
+        self.queuedFrameTrees = self.queuedFrameTrees or {}
+        if not self.queuedFrameTrees[frameName] then
+            self.queuedFrameTrees[frameName] = true
+            self:EnqueuePostCombatCallback(function()
+                self.queuedFrameTrees[frameName] = nil
+                self:ProcessFrameTree(frameName, frameData, frameParent, retried)
+            end)
+        end
         return
     end
 

@@ -52,6 +52,8 @@ local lEnus = {
     MSG_OPEN_RESET = "Currently open windows have been reset.",
     MSG_SINGLE_RESET = "%s position and scale have been reset.",
     MSG_DEFAULTS_RESET = "All settings have been restored to defaults.",
+    MSG_RESCAN_DONE = "Windows rescanned. Hooked windows: %d",
+    MSG_HELP = "Commands: /ezfm (settings) · /ezfm scan (rescan windows) · /ezfm reset (reset all positions & scales)",
 
     CANVAS_DESC = "Freely drag standard game UI windows, save their positions, and resize them with Ctrl + Mouse Wheel.\nOpen the settings window via the button below or /ezfm.",
     CANVAS_OPEN_BTN = "Settings (/ezfm)",
@@ -123,6 +125,8 @@ local lKokr = {
     MSG_OPEN_RESET = "현재 열려 있는 창들의 위치와 크기가 초기화되었습니다.",
     MSG_SINGLE_RESET = "%s의 위치와 크기가 초기화되었습니다.",
     MSG_DEFAULTS_RESET = "모든 설정이 기본값으로 복원되었습니다.",
+    MSG_RESCAN_DONE = "창을 다시 검색했습니다. 등록된 창: %d개",
+    MSG_HELP = "명령어: /ezfm (설정) · /ezfm scan 또는 스캔 (창 다시 검색) · /ezfm reset 또는 초기화 (모든 위치·크기 초기화)",
 
     CANVAS_DESC = "블리자드 기본 UI 창을 마우스로 드래그해 자유롭게 이동·저장하고, Ctrl + 마우스 휠로 크기를 조절합니다.\n아래 버튼이나 /ezfm 명령어로 전용 설정창을 열 수 있습니다.",
     CANVAS_OPEN_BTN = "설정 (/ezfm)",

@@ -470,7 +470,13 @@ function ns:CreateSettingsWindow()
     local verText = headerRegion:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     verText:SetPoint("LEFT", titleStr, "RIGHT", 8, 0)
     verText:SetTextColor(unpack(STYLE.textSub))
-    verText:SetText("v" .. tostring(self.VERSION))
+    -- version comes from the toc so it never goes stale
+    local getMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+    local okMeta, tocVersion = false, nil
+    if type(getMeta) == "function" then
+        okMeta, tocVersion = pcall(getMeta, ADDON_NAME, "Version")
+    end
+    verText:SetText("v" .. tostring((okMeta and tocVersion) or self.VERSION))
 
     local subtitleRegion = headerRegion:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     subtitleRegion:SetPoint("BOTTOMLEFT", iconTex, "BOTTOMRIGHT", 10, 1)
@@ -619,7 +625,7 @@ function ns:CreateSettingsWindow()
     windowFrame.btnResetOpen:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -602)
 
     windowFrame.btnRescan = SettingsDialog.buildFlatButton(windowFrame, 216, 26, "", function()
-        ns:ScanAllFrames()
+        ns:RescanFramesWithFeedback()
     end)
     windowFrame.btnRescan:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -602)
 
@@ -744,6 +750,15 @@ function ns:RefreshSettingsUI()
     end
 end
 
+function ns:RescanFramesWithFeedback()
+    self:ScanAllFrames()
+    local hookedCount = self:ComputeManagedFrameStatistics()
+    self:PrintMsg(string.format(self:L("MSG_RESCAN_DONE"), tonumber(hookedCount) or 0))
+    if settingsFrame and settingsFrame:IsShown() then
+        self:RefreshSettingsUI()
+    end
+end
+
 function ns:ToggleSettings()
     local windowFrame = self:CreateSettingsWindow()
     if windowFrame:IsShown() then
@@ -823,7 +838,9 @@ SlashCmdList["EZWOWFRAMEMOVER"] = function(msg)
         ns:ResetAllPositions()
         ns:ResetAllScales()
     elseif cmd == "scan" or cmd == "스캔" then
-        ns:ScanAllFrames()
+        ns:RescanFramesWithFeedback()
+    elseif cmd == "help" or cmd == "?" or cmd == "도움말" then
+        ns:PrintMsg(ns:L("MSG_HELP"))
     else
         ns:ToggleSettings()
     end

@@ -58,6 +58,7 @@ local watchHooksInstalled = false
 local refreshPending = false
 local defaultTrackerHiddenByUs = false
 local defaultTrackerHooked = false
+local defaultTrackerVisibilityQueued = false
 
 function ObjectiveTrackerController.hasInCombat()
     return InCombatLockdown and InCombatLockdown()
@@ -670,6 +671,16 @@ function ObjectiveTrackerController.dismissOrUntrackQuest(questData)
     ns:UpdateQuestTracker()
 end
 
+-- the tracker refreshes many times per fight; queue the post-combat re-apply only once
+function ObjectiveTrackerController.queueDefaultTrackerVisibility()
+    if defaultTrackerVisibilityQueued then return end
+    defaultTrackerVisibilityQueued = true
+    ns:EnqueuePostCombatCallback(function()
+        defaultTrackerVisibilityQueued = false
+        ns:ApplyDefaultTrackerVisibility()
+    end)
+end
+
 function ns:ApplyDefaultTrackerVisibility()
     local savedDB = self:InitializeDatabase()
     local shouldHide = (savedDB.enableTracker ~= false) and (savedDB.hideDefaultTracker ~= false)
@@ -682,9 +693,7 @@ function ns:ApplyDefaultTrackerVisibility()
     if not defaultTracker then return end
 
     if ObjectiveTrackerController.hasInCombat() and defaultTracker.IsProtected and defaultTracker:IsProtected() then
-        self:EnqueuePostCombatCallback(function()
-            self:ApplyDefaultTrackerVisibility()
-        end)
+        ObjectiveTrackerController.queueDefaultTrackerVisibility()
         return
     end
 
@@ -694,7 +703,7 @@ function ns:ApplyDefaultTrackerVisibility()
             local dBVal = ns:InitializeDatabase()
             if dBVal.enableTracker ~= false and dBVal.hideDefaultTracker ~= false then
                 if ObjectiveTrackerController.hasInCombat() and f.IsProtected and f:IsProtected() then
-                    ns:EnqueuePostCombatCallback(function() ns:ApplyDefaultTrackerVisibility() end)
+                    ObjectiveTrackerController.queueDefaultTrackerVisibility()
                 else
                     pcall(f.Hide, f)
                     defaultTrackerHiddenByUs = true
@@ -804,6 +813,8 @@ end
 
 function ObjectiveTrackerController.assignTrackerScroll(offset)
     if not scrollFrame then return end
+    -- secure quest-item buttons inside the scroll child make it protected in combat
+    if ObjectiveTrackerController.hasInCombat() and scrollFrame:IsProtected() then return end
     currentScrollOffset = ObjectiveTrackerController.clampValue(offset or 0, 0, maxScrollOffset)
     scrollFrame:SetVerticalScroll(currentScrollOffset)
     ObjectiveTrackerController.refreshScrollBarVisual()
@@ -1044,9 +1055,14 @@ function ObjectiveTrackerController.dismissUnusedPools(usedLines, usedButtons)
     end
     if not ObjectiveTrackerController.hasInCombat() then
         for indexEntry = usedButtons + 1, #itemBtnPool do
-            itemBtnPool[indexEntry]:SetAttribute("type", nil)
-            itemBtnPool[indexEntry]:SetAttribute("item", nil)
-            itemBtnPool[indexEntry]:Hide()
+            local unusedBtn = itemBtnPool[indexEntry]
+            unusedBtn:SetAttribute("type", nil)
+            unusedBtn:SetAttribute("item", nil)
+            unusedBtn:Hide()
+            -- detach from the tracker so an idle secure button does not keep the tracker protected
+            unusedBtn:ClearAllPoints()
+            unusedBtn:SetParent(UIParent)
+            unusedBtn.itemID = nil
         end
     end
 end
@@ -1397,6 +1413,12 @@ end
 function ns:UpdateQuestTracker()
     local savedDB = self:InitializeDatabase()
     self:ApplyDefaultTrackerVisibility()
+
+    -- secure quest-item buttons make the tracker (implicitly) protected: Show/Hide/SetSize/SetHeight
+    -- would be blocked in combat, so relayout after PLAYER_REGEN_ENABLED instead
+    if trackerFrame and ObjectiveTrackerController.hasInCombat() and trackerFrame:IsProtected() then
+        return
+    end
 
     if savedDB.enableTracker == false then
         if trackerFrame then

@@ -39,6 +39,11 @@ ns.DEFAULTS = {
     trackerCollapsedQuests = {},
     trackerHiddenQuests = {},
     trackerWatchedQuests = {},
+    questAutoAccept = false,
+    questAutoComplete = false,
+    questSkipRisky = true,
+    questSkipItems = false,
+    questMarkBest = true,
     positions = {},
     scales = {},
 }

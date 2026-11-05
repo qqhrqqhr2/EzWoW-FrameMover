@@ -424,7 +424,7 @@ function ns:CreateSettingsWindow()
     if settingsFrame then return settingsFrame end
 
     local windowFrame = CreateFrame("Frame", "EzWoWFrameMoverSettings", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
-    windowFrame:SetSize(480, 678)
+    windowFrame:SetSize(480, 779)
     windowFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     windowFrame:SetFrameStrata("FULLSCREEN_DIALOG")
     windowFrame:SetToplevel(true)
@@ -583,11 +583,26 @@ function ns:CreateSettingsWindow()
         if ns.UpdateQuestTracker then ns:UpdateQuestTracker() end
     end)
 
-    windowFrame.secStatus = SettingsDialog.buildSectionHeader(windowFrame, -440)
+    windowFrame.secQuest = SettingsDialog.buildSectionHeader(windowFrame, -440)
+    local function questCheck(x, y, key)
+        local rowWidget = SettingsDialog.buildFlatCheckbox(windowFrame, x, y, function(checked)
+            ns:InitializeDatabase()[key] = checked
+        end)
+        rowWidget:SetWidth(215)
+        rowWidget.fitWidth = 215 - 18 - 9
+        return rowWidget
+    end
+    windowFrame.chkQuestAccept = questCheck(20, -464, "questAutoAccept")
+    windowFrame.chkQuestComplete = questCheck(245, -464, "questAutoComplete")
+    windowFrame.chkQuestSkip = questCheck(20, -487, "questSkipRisky")
+    windowFrame.chkQuestBest = questCheck(245, -487, "questMarkBest")
+    windowFrame.chkQuestSkipItems = questCheck(20, -510, "questSkipItems")
+
+    windowFrame.secStatus = SettingsDialog.buildSectionHeader(windowFrame, -541)
 
     local statusBox = CreateFrame("Frame", nil, windowFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
-    statusBox:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -464)
-    statusBox:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -464)
+    statusBox:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -565)
+    statusBox:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -565)
     statusBox:SetHeight(74)
     SettingsDialog.commitFlatBackdrop(statusBox, STYLE.bgSub, STYLE.border)
 
@@ -607,27 +622,27 @@ function ns:CreateSettingsWindow()
     guideText:SetTextColor(unpack(STYLE.textSub))
     windowFrame.guideText = guideText
 
-    windowFrame.secControls = SettingsDialog.buildSectionHeader(windowFrame, -548)
+    windowFrame.secControls = SettingsDialog.buildSectionHeader(windowFrame, -649)
 
     windowFrame.btnResetPos = SettingsDialog.buildFlatButton(windowFrame, 216, 26, "", function()
         ns:ResetAllPositions()
     end)
-    windowFrame.btnResetPos:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -572)
+    windowFrame.btnResetPos:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -673)
 
     windowFrame.btnResetScale = SettingsDialog.buildFlatButton(windowFrame, 216, 26, "", function()
         ns:ResetAllScales()
     end)
-    windowFrame.btnResetScale:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -572)
+    windowFrame.btnResetScale:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -673)
 
     windowFrame.btnResetOpen = SettingsDialog.buildFlatButton(windowFrame, 216, 26, "", function()
         ns:ResetOpenFrames()
     end)
-    windowFrame.btnResetOpen:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -602)
+    windowFrame.btnResetOpen:SetPoint("TOPLEFT", windowFrame, "TOPLEFT", 18, -703)
 
     windowFrame.btnRescan = SettingsDialog.buildFlatButton(windowFrame, 216, 26, "", function()
         ns:RescanFramesWithFeedback()
     end)
-    windowFrame.btnRescan:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -602)
+    windowFrame.btnRescan:SetPoint("TOPRIGHT", windowFrame, "TOPRIGHT", -18, -703)
 
     local footerRegion = CreateFrame("Frame", nil, windowFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
     footerRegion:SetPoint("BOTTOMLEFT", windowFrame, "BOTTOMLEFT", 1, 1)
@@ -724,6 +739,18 @@ function ns:RefreshSettingsUI()
         SettingsDialog.setFittedLabel(windowFrame.chkTrackerShowBg, self:L("OPT_TRACKER_SHOW_BG"))
         windowFrame.chkTrackerShowBg:SetChecked(savedDB.trackerShowBg ~= false)
         SettingsDialog.syncTrackerOptionRows(windowFrame)
+
+        windowFrame.secQuest.title:SetText(self:L("SECTION_QUEST_AUTO"))
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestAccept, self:L("OPT_QUEST_ACCEPT"))
+        windowFrame.chkQuestAccept:SetChecked(savedDB.questAutoAccept == true)
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestComplete, self:L("OPT_QUEST_COMPLETE"))
+        windowFrame.chkQuestComplete:SetChecked(savedDB.questAutoComplete == true)
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestSkip, self:L("OPT_QUEST_SKIP"))
+        windowFrame.chkQuestSkip:SetChecked(savedDB.questSkipRisky ~= false)
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestBest, self:L("OPT_QUEST_BEST"))
+        windowFrame.chkQuestBest:SetChecked(savedDB.questMarkBest ~= false)
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestSkipItems, self:L("OPT_QUEST_SKIP_ITEMS"))
+        windowFrame.chkQuestSkipItems:SetChecked(savedDB.questSkipItems == true)
 
         windowFrame.secStatus.title:SetText(self:L("SECTION_STATUS"))
         local hookedCount, posCount, scaleCount = self:ComputeManagedFrameStatistics()

@@ -68,6 +68,18 @@ WoW Forever (`Interface: 16001`) · `/ezfm`
 - 전문기술 창(`TradeSkillFrame`, `CraftFrame`)은 오류를 막기 위해 일부러 건드리지 않습니다.
 - 전투 중에는 보호된 창 속성을 바꾸지 않습니다. 전투가 끝난 뒤 다시 시도하세요.
 
+### 퀘스트 자동화
+
+설정창의 **퀘스트 자동화** 항목에서 켭니다(처음에는 꺼져 있음). NPC와 대화할 때 **Shift**를 누르고 있으면 그 대화에서는 자동화가 동작하지 않습니다.
+
+| 항목 | 설명 | 기본값 |
+|---|---|---|
+| 퀘스트 자동 수락 | 퀘스트를 바로 수락합니다. 퀘스트가 없고 대화 선택지가 하나뿐인 NPC는 그 선택지를 자동으로 고릅니다(초기화 같은 선택지는 제외). 일행이 공유한 퀘스트·호위 퀘스트 확인 창도 자동으로 수락합니다. | 끔 |
+| 완료한 퀘스트 자동 완료 | 목표를 다 채운 퀘스트를 바로 완료합니다. 보상을 골라야 하면 직접 고릅니다. 골드를 내는 퀘스트는 완료하지 않습니다. | 끔 |
+| 반복·회색 퀘스트 제외 | 반복·일일 퀘스트와 레벨이 낮은 회색 퀘스트는 자동 수락하지 않습니다. | 켬 |
+| 아이템을 내는 퀘스트는 자동 완료 안 함 | 아이템을 건네야 하는 퀘스트는 직접 완료합니다. | 끔 |
+| 판매가가 가장 높은 보상 표시 | 보상을 고를 때 상점 판매가가 가장 높은 아이템에 금화 표시를 붙입니다. | 켬 |
+
 ### 설정창 (`/ezfm`)
 
 | 번호 | 항목 | 기본값 |
@@ -159,6 +171,18 @@ Frame Mover lets you **drag Blizzard's fixed windows anywhere** and remembers wh
 
 - Profession windows (`TradeSkillFrame`, `CraftFrame`) are skipped on purpose to avoid UI errors.
 - Protected window attributes are never changed in combat; try again after combat.
+
+### Quest automation
+
+Turn it on in the **Quest automation** section of the settings (off by default). Hold **Shift** while talking to an NPC to skip automation for that conversation.
+
+| Option | Description | Default |
+|---|---|---|
+| Auto accept quests | Accepts quests right away. An NPC with no quests and only one dialogue option gets that option picked (reset-type options are skipped). Shared and escort quest confirmations are accepted too. | Off |
+| Auto turn in finished quests | Turns in completed quests. If you must choose a reward you pick it yourself. Quests that cost gold are never turned in. | Off |
+| Skip repeatable and grey quests | Repeatable/daily and low-level grey quests are not auto accepted. | On |
+| Do not auto turn in quests that take items | Quests that take items from you are left for you to turn in. | Off |
+| Mark the reward that sells for most | Puts a gold mark on the reward choice with the highest vendor price. | On |
 
 ### Settings window (`/ezfm`)
 

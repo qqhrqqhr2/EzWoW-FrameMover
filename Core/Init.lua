@@ -25,14 +25,35 @@ function CoreBootstrap.runNext(fn)
     end
 end
 
+-- Forbidden frames (protected Blizzard UI) can't be inspected by addons; calling
+-- their methods throws "Attempt to access forbidden object", so they are skipped.
+local function isUsableFrame(frame)
+    if type(frame) ~= "table" then return false end
+    if frame.IsForbidden then
+        local ok, forbidden = pcall(frame.IsForbidden, frame)
+        if not ok or forbidden then return false end
+    end
+    return true
+end
+
 function CoreBootstrap.resolveMouseFocusList()
+    local foci
     if type(GetMouseFoci) == "function" then
-        return GetMouseFoci()
+        foci = GetMouseFoci()
     elseif type(GetMouseFocus) == "function" then
         local windowFrame = GetMouseFocus()
-        return windowFrame and { windowFrame } or {}
+        foci = windowFrame and { windowFrame } or {}
     end
-    return {}
+    local out = {}
+    for index, frame in ipairs(foci or {}) do
+        if isUsableFrame(frame) then
+            out[#out + 1] = frame
+        elseif index == 1 then
+            -- the mouse is over a protected frame: nothing below it counts as hovered
+            return out
+        end
+    end
+    return out
 end
 
 function CoreBootstrap.untaintedSetNil(tbl, key)

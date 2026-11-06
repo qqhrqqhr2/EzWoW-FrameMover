@@ -579,9 +579,173 @@ function ObjectiveTrackerController.gatherWatchedQuestRecords()
     return zoneOrder, zones, totalActiveQuests
 end
 
+-----------------------------------------------------------------------------
+-- Quest log overlay. Opening the world map from addon code taints its pins
+-- (the map's own SetPassThroughButtons calls are then blocked in combat), so
+-- a plain left click on a quest line goes through one secure button that
+-- clicks a button of the game's own: the quest's header in the default
+-- tracker (opens the map at the quest's details) or, when that block does not
+-- exist, the quest log micro button. The overlay lies over the hovered line,
+-- placed by screen position (never anchored to the tracker, which would make
+-- the tracker protected), and only out of combat: it hides when combat starts.
+-- Other clicks (modifiers, right button) go on to the line's own handler.
+-----------------------------------------------------------------------------
+local questOverlay
+local QUEST_TRACKER_MODULES = { "QuestObjectiveTracker", "CampaignQuestObjectiveTracker" }
+
+function ObjectiveTrackerController.findDefaultQuestHeader(questID)
+    for _, moduleName in ipairs(QUEST_TRACKER_MODULES) do
+        local module = _G[moduleName]
+        if type(module) == "table" and type(module.GetExistingBlock) == "function" then
+            local ok, block = pcall(module.GetExistingBlock, module, questID)
+            local header = ok and type(block) == "table" and block.HeaderButton
+            if header and type(header.Click) == "function" then return header end
+        end
+    end
+    return nil
+end
+
+function ObjectiveTrackerController.resolveQuestLogClickTarget(questID)
+    local header = ObjectiveTrackerController.findDefaultQuestHeader(questID)
+    if header then return header end
+    local micro = _G.QuestLogMicroButton
+    if micro and type(micro.Click) == "function" then return micro end
+    return nil
+end
+
+function ObjectiveTrackerController.hideQuestOverlay()
+    if not questOverlay or ObjectiveTrackerController.hasInCombat() then return end
+    questOverlay:SetScript("OnUpdate", nil)
+    questOverlay:Hide()
+    questOverlay.line = nil
+end
+
+-- Covers the part of the line inside the scroll view (after the +/- badge).
+function ObjectiveTrackerController.placeQuestOverlay(line)
+    local overlay = questOverlay
+    if not (overlay and line and scrollFrame) then return false end
+    local left, right = line:GetLeft(), line:GetRight()
+    local top, bottom = line:GetTop(), line:GetBottom()
+    local viewTop, viewBottom = scrollFrame:GetTop(), scrollFrame:GetBottom()
+    if not (left and right and top and bottom and viewTop and viewBottom) then return false end
+    if line.badgeBtn and line.badgeBtn:IsShown() then left = left + 15 end
+    top, bottom = math.min(top, viewTop), math.max(bottom, viewBottom)
+    if top <= bottom or right <= left then return false end
+    local ratio = line:GetEffectiveScale() / overlay:GetEffectiveScale()
+    overlay:ClearAllPoints()
+    overlay:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * ratio, top * ratio)
+    overlay:SetSize((right - left) * ratio, (top - bottom) * ratio)
+    return true
+end
+
+function ObjectiveTrackerController.ensureQuestOverlay()
+    if questOverlay then return questOverlay end
+    local overlay = CreateFrame("Button", "EzWoWTrackerQuestOverlay", UIParent, "SecureActionButtonTemplate")
+    overlay:Hide()
+    overlay:SetFrameStrata("MEDIUM")
+    overlay:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    overlay:SetAttribute("useOnKeyDown", false)
+    overlay:RegisterForDrag("LeftButton")
+    overlay:SetScript("OnDragStart", function(self)
+        ObjectiveTrackerController.startTrackerDrag()
+        -- the overlay is not attached to the tracker: follow the line while it moves
+        self:SetScript("OnUpdate", function(me)
+            if ObjectiveTrackerController.hasInCombat() then return end
+            if me.line then ObjectiveTrackerController.placeQuestOverlay(me.line) end
+        end)
+    end)
+    overlay:SetScript("OnDragStop", function(self)
+        self:SetScript("OnUpdate", nil)
+        ObjectiveTrackerController.stopTrackerDrag()
+        if self.line and not ObjectiveTrackerController.hasInCombat() then
+            ObjectiveTrackerController.placeQuestOverlay(self.line)
+        end
+    end)
+    overlay:EnableMouseWheel(true)
+    overlay:SetScript("OnMouseWheel", function(self, delta)
+        local line = self.line
+        ObjectiveTrackerController.onTrackerMouseWheel(self, delta)
+        -- the lines moved: let the one now under the cursor take the overlay
+        if line and line.hl then line.hl:Hide() end
+        if GameTooltip then GameTooltip:Hide() end
+        ObjectiveTrackerController.hideQuestOverlay()
+    end)
+    -- unmodified left click: done by the secure "click" action (type1)
+    overlay:SetScript("PostClick", function(self, button)
+        if button == "LeftButton" and not (IsModifierKeyDown and IsModifierKeyDown()) then return end
+        local line = self.line
+        local handler = line and line:GetScript("OnClick")
+        if handler then handler(line, button) end
+    end)
+    overlay:SetScript("OnLeave", function(self)
+        local line = self.line
+        if line and line.hl then line.hl:Hide() end
+        if GameTooltip then GameTooltip:Hide() end
+        ObjectiveTrackerController.hideQuestOverlay()
+    end)
+    questOverlay = overlay
+
+    local combatWatch = CreateFrame("Frame")
+    pcall(combatWatch.RegisterEvent, combatWatch, "PLAYER_REGEN_DISABLED")
+    combatWatch:SetScript("OnEvent", function()
+        -- still allowed here: the lockdown starts right after this event
+        if questOverlay and not InCombatLockdown() then
+            questOverlay:SetScript("OnUpdate", nil)
+            questOverlay:Hide()
+            questOverlay.line = nil
+        end
+    end)
+    return overlay
+end
+
+function ObjectiveTrackerController.showQuestOverlay(line)
+    if ObjectiveTrackerController.hasInCombat() then return end
+    local questData = line and line.questData
+    if not (questData and questData.questID) then
+        ObjectiveTrackerController.hideQuestOverlay()
+        return
+    end
+    local target = ObjectiveTrackerController.resolveQuestLogClickTarget(questData.questID)
+    if not target then
+        ObjectiveTrackerController.hideQuestOverlay()
+        return
+    end
+    local overlay = ObjectiveTrackerController.ensureQuestOverlay()
+    if not ObjectiveTrackerController.placeQuestOverlay(line) then
+        ObjectiveTrackerController.hideQuestOverlay()
+        return
+    end
+    overlay:SetFrameLevel(line:GetFrameLevel() + 5)
+    overlay:SetAttribute("type1", "click")
+    overlay:SetAttribute("clickbutton1", target)
+    overlay.line = line
+    overlay:Show()
+end
+
+-- After the list is redrawn: keep the overlay on its line if the cursor is
+-- still there (the target may have changed), else take it away.
+function ObjectiveTrackerController.refreshQuestOverlay()
+    if not (questOverlay and questOverlay:IsShown()) or ObjectiveTrackerController.hasInCombat() then return end
+    local line = questOverlay.line
+    if line and line:IsVisible() and line.questData and questOverlay:IsMouseOver() then
+        ObjectiveTrackerController.showQuestOverlay(line)
+    else
+        ObjectiveTrackerController.hideQuestOverlay()
+    end
+end
+
+-- Without a secure target (or in combat, where the overlay is off) the line's
+-- own click lands here.
 function ObjectiveTrackerController.launchQuestInLog(questData)
     if not questData or not questData.questID then return end
-    if ObjectiveTrackerController.hasInCombat() then return end
+    if ObjectiveTrackerController.hasInCombat() then
+        -- a chat line added in combat would taint the chat history: note it on the tooltip
+        if GameTooltip and GameTooltip:IsShown() then
+            GameTooltip:AddLine(ns:L("TRACKER_COMBAT_LOG"), 1, 0.35, 0.35, true)
+            GameTooltip:Show()
+        end
+        return
+    end
 
     if type(QuestMapFrame_OpenToQuestDetails) == "function" and not (_G.QuestLogFrame or _G.ClassicQuestLog or _G.QuestLogExFrame) then
         pcall(QuestMapFrame_OpenToQuestDetails, questData.questID)
@@ -685,10 +849,6 @@ function ns:ApplyDefaultTrackerVisibility()
     local savedDB = self:InitializeDatabase()
     local shouldHide = (savedDB.enableTracker ~= false) and (savedDB.hideDefaultTracker ~= false)
 
-    if type(_G._EQT_SetSuppressed) == "function" then
-        pcall(_G._EQT_SetSuppressed, "EzWoW_FrameMover", shouldHide)
-    end
-
     local defaultTracker = _G.ObjectiveTrackerFrame or _G.QuestWatchFrame or _G.WatchFrame
     if not defaultTracker then return end
 
@@ -721,9 +881,11 @@ function ns:ApplyDefaultTrackerVisibility()
         -- only undo our own hide; Blizzard or another tracker addon may hide it for its own reasons
         defaultTrackerHiddenByUs = false
         if not defaultTracker:IsShown() then
+            -- no forced tracker update from here: running the game's tracker update from
+            -- addon code taints the tables it fills, and the game's own later updates
+            -- (for example the one the splash screen runs when it closes) would then carry
+            -- that taint into secure frames. The tracker refreshes itself on its next event.
             pcall(defaultTracker.Show, defaultTracker)
-            local manager = _G.ObjectiveTrackerManager
-            if manager and manager.UpdateAll then pcall(manager.UpdateAll, manager) end
         end
     end
 end
@@ -982,8 +1144,11 @@ function ObjectiveTrackerController.acquireTrackerRowWidget(index)
             end
             GameTooltip:Show()
         end
+        ObjectiveTrackerController.showQuestOverlay(self)
     end)
     line:SetScript("OnLeave", function(self)
+        -- the overlay just went over this line: it keeps the hover
+        if questOverlay and questOverlay:IsShown() and questOverlay.line == self then return end
         self.hl:Hide()
         if GameTooltip then GameTooltip:Hide() end
     end)
@@ -1425,6 +1590,7 @@ function ns:UpdateQuestTracker()
             ObjectiveTrackerController.dismissUnusedPools(0, 0)
             trackerFrame:Hide()
         end
+        ObjectiveTrackerController.hideQuestOverlay()
         return
     end
 
@@ -1701,6 +1867,7 @@ function ns:UpdateQuestTracker()
         scrollFrame:SetVerticalScroll(0)
         scrollBar:Hide()
     end
+    ObjectiveTrackerController.refreshQuestOverlay()
 end
 
 function ns:ScheduleTrackerUpdate()

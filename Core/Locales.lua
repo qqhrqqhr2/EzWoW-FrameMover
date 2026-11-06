@@ -630,3 +630,12 @@ ns.Locales.esES["TRACKER_TITLE"] = "EzWoW - Frame Mover - Seguimiento de misione
 ns.Locales.ruRU["TRACKER_TITLE"] = "EzWoW - Frame Mover - Отслеживание заданий"
 ns.Locales.zhCN["TRACKER_TITLE"] = "EzWoW - Frame Mover - 任务追踪"
 ns.Locales.zhTW["TRACKER_TITLE"] = "EzWoW - Frame Mover - 任務追蹤"
+-- The quest tracker cannot open the quest log during combat.
+ns.Locales.enUS["TRACKER_COMBAT_LOG"] = "The quest log cannot be opened during combat."
+ns.Locales.koKR["TRACKER_COMBAT_LOG"] = "전투 중에는 퀘스트 로그를 열 수 없습니다."
+ns.Locales.deDE["TRACKER_COMBAT_LOG"] = "Das Questlog kann im Kampf nicht geöffnet werden."
+ns.Locales.frFR["TRACKER_COMBAT_LOG"] = "Le journal des quêtes ne peut pas être ouvert en combat."
+ns.Locales.esES["TRACKER_COMBAT_LOG"] = "No se puede abrir el registro de misiones en combate."
+ns.Locales.ruRU["TRACKER_COMBAT_LOG"] = "Журнал заданий нельзя открыть в бою."
+ns.Locales.zhCN["TRACKER_COMBAT_LOG"] = "战斗中无法打开任务日志。"
+ns.Locales.zhTW["TRACKER_COMBAT_LOG"] = "戰鬥中無法開啟任務日誌。"

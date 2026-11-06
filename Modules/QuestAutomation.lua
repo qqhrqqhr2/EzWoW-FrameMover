@@ -41,9 +41,18 @@ local function skipItems() return db().questSkipItems == true end
 -- (hearthstone binding, talent/skill resets, locked options).
 local RISKY_WORDS = { "unlearn", "reset", "bind", "초기화", "귀환", "잊" }
 
+-- Only options the NPC offers as available (not locked or already used).
+local function optionAvailable(option)
+    local status = plain(option.status)
+    local statuses = Enum and Enum.GossipOptionStatus
+    if type(statuses) == "table" and statuses.Available ~= nil then
+        return status == nil or status == statuses.Available
+    end
+    return (tonumber(status) or 0) == 0
+end
+
 local function riskyOption(option)
-    local status = tonumber(plain(option.status)) or 0
-    if status ~= 0 then return true end
+    if not optionAvailable(option) then return true end
     local name = plain(option.name)
     if type(name) ~= "string" then return true end
     local lower = name:lower()
@@ -53,9 +62,24 @@ local function riskyOption(option)
     return false
 end
 
--- Option IDs already picked while this gossip window stays open
--- (stops a loop when an NPC keeps showing the same single option).
+-- Options picked a moment ago, by gossip text and option ID (stops a loop
+-- when an NPC keeps showing the same single option; the same option ID can
+-- belong to different NPC texts, so the text is part of the key).
 local pickedOptions = {}
+local PICK_MEMORY = 5   -- seconds
+
+local function forgetOldPicks()
+    local now = GetTime()
+    for key, at in pairs(pickedOptions) do
+        if now - at >= PICK_MEMORY then pickedOptions[key] = nil end
+    end
+end
+
+local function pickKey(optionID)
+    local text = plain(call(C_GossipInfo and C_GossipInfo.GetText))
+    if type(text) ~= "string" then text = "" end
+    return text .. "#" .. tostring(optionID)
+end
 
 -----------------------------------------------------------------------------
 -- Gossip window (NPCs with several options)
@@ -82,7 +106,9 @@ local function handleGossip()
                 end
             end
         end
-        -- No quests here and only one thing to say: pick it.
+        -- No quests here and only one thing to say: pick it (never inside
+        -- dungeons and raids, where talking can start an event).
+        if IsInInstance and IsInInstance() then return end
         local active = call(gossip.GetActiveQuests) or {}
         local available = call(gossip.GetAvailableQuests) or {}
         if #active > 0 or #available > 0 then return end
@@ -93,8 +119,11 @@ local function handleGossip()
         -- the client already picks options flagged for that by itself
         if plain(option.selectOptionWhenOnlyOption) == true then return end
         local optionID = plain(option.gossipOptionID)
-        if not optionID or pickedOptions[optionID] then return end
-        pickedOptions[optionID] = true
+        if not optionID then return end
+        local key = pickKey(optionID)
+        local pickedAt = pickedOptions[key]
+        if pickedAt and GetTime() - pickedAt < PICK_MEMORY then return end
+        pickedOptions[key] = GetTime()
         call(gossip.SelectOption, optionID)
     end
 end
@@ -145,15 +174,17 @@ local function handleProgress()
     call(CompleteQuest)
 end
 
--- Marks the reward that sells for the most when there is a choice.
+-- Marks the reward that sells for the most (price x count) when there is a
+-- choice: in the NPC's reward window, the quest log and the map's quest details.
+-- The reward buttons are read where the game lays them out; each button's own
+-- index picks its item, so the mark never lands on the wrong button.
 local bestMark
-local function markBestReward(index)
-    local button
-    if type(QuestInfo_GetRewardButton) == "function" and QuestInfoFrame and QuestInfoFrame.rewardsFrame then
-        button = call(QuestInfo_GetRewardButton, QuestInfoFrame.rewardsFrame, index)
-    end
-    button = button or _G["QuestInfoRewardsFrameQuestInfoItem" .. index]
-    if not button then return false end
+
+local function hideBestMark()
+    if bestMark then bestMark:Hide() end
+end
+
+local function placeBestMark(button)
     if not bestMark then
         bestMark = CreateFrame("Frame", nil, UIParent)
         bestMark:SetSize(18, 18)
@@ -166,7 +197,6 @@ local function markBestReward(index)
     bestMark:ClearAllPoints()
     bestMark:SetPoint("TOPLEFT", button, "TOPLEFT", -4, 4)
     bestMark:Show()
-    return true
 end
 
 -- Vendor price (11th value of the item info).
@@ -191,66 +221,102 @@ local function requestItem(link)
     if itemID then call(C_Item.RequestLoadItemDataByID, itemID) end
 end
 
--- While the reward window is open and some choices were not loaded yet,
+-- Link and stack count of choice reward <index>, from the quest log or the NPC.
+local function choiceItem(fromLog, index)
+    local link, count
+    if fromLog then
+        link = call(GetQuestLogItemLink, "choice", index)
+        local _, _, numItems = call(GetQuestLogChoiceInfo, index)
+        count = numItems
+    else
+        link = call(GetQuestItemLink, "choice", index)
+        local _, _, numItems = call(GetQuestItemInfo, "choice", index)
+        count = numItems
+    end
+    count = tonumber(plain(count)) or 1
+    if count < 1 then count = 1 end
+    return plain(link), count
+end
+
+-- While the rewards are shown and some choices were not loaded yet,
 -- the mark is redone when item data arrives (a few times at most).
-local rewardOpen, rewardWaiting, rewardRetries = false, false, 0
+local rewardWaiting, rewardRetries = false, 0
 local MAX_REWARD_RETRIES = 5
 
+local function rewardsShown()
+    local rewards = QuestInfoFrame and QuestInfoFrame.rewardsFrame
+    return rewards and rewards.IsVisible and rewards:IsVisible() and rewards or nil
+end
+
 local function updateBestReward()
-    if bestMark then bestMark:Hide() end
+    hideBestMark()
     rewardWaiting = false
-    local choices = tonumber(call(GetNumQuestChoices)) or 0
-    if choices <= 1 or db().questMarkBest == false then return end
-    local bestIndex, bestPrice = nil, 0
-    for i = 1, choices do
-        local link = call(GetQuestItemLink, "choice", i)
-        if link then
-            local price = sellPrice(link)
-            if price == nil then
-                rewardWaiting = true
-                requestItem(link)
-            elseif price > bestPrice then
-                bestIndex, bestPrice = i, price
+    if db().questMarkBest == false then return end
+    local rewards = rewardsShown()
+    local buttons = rewards and rewards.RewardButtons
+    if type(buttons) ~= "table" then return end
+    local fromLog = QuestInfoFrame.questLog and true or false
+    local choices, bestButton, bestValue = 0, nil, 0
+    for _, button in ipairs(buttons) do
+        if button:IsShown() and button.type == "choice" and button.objectType == "item" then
+            choices = choices + 1
+            local index = button:GetID()
+            local link, count = choiceItem(fromLog, index)
+            if link then
+                local price = sellPrice(link)
+                if price == nil then
+                    rewardWaiting = true
+                    requestItem(link)
+                elseif price * count > bestValue then
+                    bestButton, bestValue = button, price * count
+                end
             end
         end
+    end
+    if choices <= 1 then
+        rewardWaiting = false
+        return
     end
     -- wait for every choice before picking, so the mark does not jump around
     if rewardWaiting and rewardRetries < MAX_REWARD_RETRIES then return end
     rewardWaiting = false
-    if bestIndex then
-        -- the reward buttons are laid out right after this event
-        C_Timer.After(0, function()
-            if not rewardOpen then return end
-            if not markBestReward(bestIndex) then
-                local link = call(GetQuestItemLink, "choice", bestIndex)
-                if link then ns:PrintMsg(string.format(ns:L("MSG_QUEST_BEST"), link)) end
-            end
-        end)
-    end
+    if bestButton then placeBestMark(bestButton) end
 end
+
+local function refreshBestReward()
+    local ok, err = pcall(updateBestReward)
+    if not ok and type(geterrorhandler) == "function" then geterrorhandler()(err) end
+end
+
+-- Every quest text window (NPC, quest log, map details) is drawn by QuestInfo_Display.
+local displayHooked = false
+local function hookQuestInfoDisplay()
+    if displayHooked or type(QuestInfo_Display) ~= "function" then return end
+    displayHooked = true
+    hooksecurefunc("QuestInfo_Display", function()
+        rewardRetries = 0
+        refreshBestReward()
+    end)
+end
+hookQuestInfoDisplay()
 
 local retryQueued = false
 local function onItemInfoReceived()
-    if not (rewardOpen and rewardWaiting) or retryQueued then return end
+    if not rewardWaiting or retryQueued then return end
     retryQueued = true
     -- several items usually arrive together; redo the mark once
     C_Timer.After(0.1, function()
         retryQueued = false
-        if not (rewardOpen and rewardWaiting) then return end
+        if not (rewardWaiting and rewardsShown()) then return end
         rewardRetries = rewardRetries + 1
-        local ok, err = pcall(updateBestReward)
-        if not ok and type(geterrorhandler) == "function" then geterrorhandler()(err) end
+        refreshBestReward()
     end)
 end
 
 local function handleReward()
-    rewardOpen, rewardRetries = true, 0
     local choices = tonumber(call(GetNumQuestChoices)) or 0
-    if choices > 1 then
-        updateBestReward()
-        return
-    end
-    if bestMark then bestMark:Hide() end
+    -- with a choice the player picks (the best one is marked)
+    if choices > 1 then return end
     if not completeOn() then return end
     call(GetQuestReward, choices == 1 and 1 or 0)
 end
@@ -282,13 +348,18 @@ for event in pairs(HANDLERS) do pcall(eventFrame.RegisterEvent, eventFrame, even
 pcall(eventFrame.RegisterEvent, eventFrame, "QUEST_FINISHED")
 pcall(eventFrame.RegisterEvent, eventFrame, "GOSSIP_CLOSED")
 pcall(eventFrame.RegisterEvent, eventFrame, "GET_ITEM_INFO_RECEIVED")
+if not displayHooked then pcall(eventFrame.RegisterEvent, eventFrame, "ADDON_LOADED") end
 eventFrame:SetScript("OnEvent", function(_, event)
     if event == "QUEST_FINISHED" then
-        rewardOpen, rewardWaiting = false, false
-        if bestMark then bestMark:Hide() end
+        rewardWaiting = false
+        hideBestMark()
         return
     elseif event == "GOSSIP_CLOSED" then
-        for key in pairs(pickedOptions) do pickedOptions[key] = nil end
+        forgetOldPicks()
+        return
+    elseif event == "ADDON_LOADED" then
+        hookQuestInfoDisplay()
+        if displayHooked then pcall(eventFrame.UnregisterEvent, eventFrame, "ADDON_LOADED") end
         return
     elseif event == "GET_ITEM_INFO_RECEIVED" then
         onItemInfoReceived()

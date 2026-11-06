@@ -102,9 +102,29 @@ function FrameDragController.readCurrentFrameAnchors(frame)
     return pts
 end
 
+-- Saved offsets are kept in UIParent units: frame units times the frame's effective scale
+-- over UIParent's. Using the effective-scale ratio (not the frame's own scale) keeps a
+-- position correct for frames whose parent is scaled too, and it does not depend on the
+-- UI scale value current at the moment the position is read or applied. For a frame
+-- parented to UIParent the ratio equals frame:GetScale(), so older saved data reads the same.
+function FrameDragController.resolveFrameToUIRatio(frame)
+    if not frame then return nil end
+    local frameEff = frame.GetEffectiveScale and frame:GetEffectiveScale()
+    local uiEff = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale()
+    local hasSecret = type(issecretvalue) == "function" and (issecretvalue(frameEff) or issecretvalue(uiEff))
+    if not hasSecret and type(frameEff) == "number" and type(uiEff) == "number" and frameEff > 0 and uiEff > 0 then
+        return frameEff / uiEff
+    end
+    local ownScale = frame.GetScale and frame:GetScale()
+    if type(ownScale) == "number" and ownScale > 0 then
+        return ownScale
+    end
+    return nil
+end
+
 function FrameDragController.computeAbsoluteScreenAnchor(frame)
     if not frame then return nil end
-    local calculateCanvasScale = frame:GetScale()
+    local calculateCanvasScale = FrameDragController.resolveFrameToUIRatio(frame)
     if not calculateCanvasScale or calculateCanvasScale <= 0 then return nil end
     if not frame:GetLeft() or not frame:GetTop() or not frame:GetRight() or not frame:GetBottom() then
         return nil
@@ -162,7 +182,7 @@ function FrameDragController.applySavedFrameAnchors(frame, framePoints, raw, ski
         local fdVal = ns.FrameData[frame]
         local useSecure = secureFrame and secureFrame.Execute and not hasInCombat() and (fdVal and fdVal.UseSecureCursorDrag)
         local assignPoint = frame.SetPointBase or frame.SetPoint
-        local calculateCanvasScale = (raw and 1) or frame:GetScale() or 1
+        local calculateCanvasScale = (raw and 1) or FrameDragController.resolveFrameToUIRatio(frame) or 1
         if calculateCanvasScale <= 0 then calculateCanvasScale = 1 end
 
         ignoreSetPointHook = true
@@ -426,6 +446,23 @@ function FrameDragController.stopMoving(frameOrHandle)
     pcall(frameOrHandle.StopMovingOrSizing, frameOrHandle)
 end
 
+-- A frame flagged user-placed is restored by the client from its own layout cache at login,
+-- converted with the UI scale of that moment, which is not final yet; such frames drift a
+-- little every session. Our saved anchors already hold the position, so a drag must not
+-- leave the flag set on a frame that did not have it.
+function FrameDragController.restoreUserPlacedFlag(frame)
+    local fdVal = frame and ns.FrameData[frame]
+    local wasUserPlaced = fdVal and fdVal.storage and fdVal.storage.wasUserPlaced
+    if wasUserPlaced == nil then return end
+    if not (frame.SetUserPlaced and frame.IsUserPlaced) then return end
+    if hasInCombat() and frame:IsProtected() then return end
+    fdVal.storage.wasUserPlaced = nil
+    local isOk, nowUserPlaced = pcall(frame.IsUserPlaced, frame)
+    if isOk and (nowUserPlaced and true or false) ~= wasUserPlaced then
+        pcall(frame.SetUserPlaced, frame, wasUserPlaced)
+    end
+end
+
 function ns:EnqueuePostCombatCallback(func, ...)
     self.CombatQueue[#self.CombatQueue + 1] = { func = func, args = { ... } }
 end
@@ -515,6 +552,8 @@ function doOnMouseDown(frame, button, moveHandle)
                 if frame.SetUserPlaced then
                     pcall(frame.SetUserPlaced, frame, userPlaced)
                 end
+                -- remembered so the flag can be put back after the drag ends as well
+                fdVal.storage.wasUserPlaced = userPlaced and true or false
                 fdVal.storage.points.startPoints = fdVal.storage.points.startPoints or FrameDragController.computeAbsoluteScreenAnchor(frame)
                 fdVal.storage.isMoving = true
                 returnValue = true
@@ -552,6 +591,7 @@ function doOnMouseUp(frame, button, moveHandle)
     if fdVal.storage.detached or not parentReturnValue then
         if button == "LeftButton" and fdVal.storage.isMoving then
             FrameDragController.stopMoving(moveHandle or frame)
+            FrameDragController.restoreUserPlacedFlag(frame)
 
             ns:SetupPointStorage(frame)
             fdVal.storage.points.dragPoints = FrameDragController.computeAbsoluteScreenAnchor(frame)
@@ -1417,6 +1457,50 @@ FrameDragController.safeRegisterEvent("PLAYER_LOGIN")
 FrameDragController.safeRegisterEvent("PLAYER_ENTERING_WORLD")
 FrameDragController.safeRegisterEvent("PLAYER_REGEN_ENABLED")
 FrameDragController.safeRegisterEvent("GLOBAL_MOUSE_DOWN")
+FrameDragController.safeRegisterEvent("UI_SCALE_CHANGED")
+FrameDragController.safeRegisterEvent("DISPLAY_SIZE_CHANGED")
+
+-- The client applies the UI scale after addons load and may restore frames from its layout
+-- cache with the scale current at that time. Saved anchors are set again once the scale is
+-- final (after entering the world) and whenever the scale or screen size changes. Protected
+-- frames in combat wait for the end of combat; one queued pass covers all of them.
+local reapplyQueuedAfterCombat = false
+function ns:ReapplySavedPositions()
+    local savedDB = self:InitializeDatabase()
+    if not savedDB.enableMove then return end
+    if secureDragState ~= nil then return end
+    local needsAfterCombat = false
+    for frame, fdVal in pairs(self.FrameData) do
+        local storage = fdVal and fdVal.storage
+        local points = storage and storage.points
+        if storage and not storage.disabled and not storage.isMoving and points and points.dragged and points.dragPoints
+            and (not storage.frameParent or storage.detached)
+            and frame.IsShown and frame:IsShown() then
+            if hasInCombat() and frame:IsProtected() then
+                needsAfterCombat = true
+            else
+                onSetPoint(frame)
+            end
+        end
+    end
+    if needsAfterCombat and not reapplyQueuedAfterCombat then
+        reapplyQueuedAfterCombat = true
+        self:EnqueuePostCombatCallback(function()
+            reapplyQueuedAfterCombat = false
+            ns:ReapplySavedPositions()
+        end)
+    end
+end
+
+function ns:QueueReapplySavedPositions()
+    if self.reapplyPending then return end
+    self.reapplyPending = true
+    -- next frame: UIParent's size has followed the new scale by then
+    runNext(function()
+        ns.reapplyPending = false
+        ns:ReapplySavedPositions()
+    end)
+end
 
 function FrameDragController.commitSpecificFixes(addOnName)
     if addOnName == "Blizzard_Collections" then
@@ -1464,6 +1548,11 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
         runNext(function()
             ns:ScanAllFrames()
         end)
+        if event == "PLAYER_ENTERING_WORLD" then
+            ns:QueueReapplySavedPositions()
+        end
+    elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
+        ns:QueueReapplySavedPositions()
     elseif event == "PLAYER_REGEN_ENABLED" then
         ns:FlushPostCombatCallbackQueue()
         ns:ScanAllFrames()

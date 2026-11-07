@@ -111,6 +111,24 @@ function SettingsDialog.syncTrackerOptionRows(windowFrame)
     end
 end
 
+-- With EzWoW - Quest loaded the quest options live there: shown greyed out here
+local QUEST_OPTION_ROWS = {
+    "chkEnableTracker", "chkHideDefaultTracker", "chkTrackerTrackAll", "chkTrackerShowZone", "chkTrackerShowBg",
+    "chkQuestAccept", "chkQuestComplete", "chkQuestSkip", "chkQuestBest", "chkQuestSkipItems", "chkQuestAnnounce",
+}
+
+function SettingsDialog.syncQuestManagedRows(windowFrame)
+    if not (ns.IsQuestAddonActive and ns.IsQuestAddonActive()) then return false end
+    for _, key in ipairs(QUEST_OPTION_ROWS) do
+        local rowWidget = windowFrame[key]
+        if rowWidget and rowWidget.SetRowEnabled then rowWidget:SetRowEnabled(false) end
+    end
+    local note = "  |cffa7b9c5(" .. ns:L("QUEST_MANAGED") .. ")|r"
+    windowFrame.secTracker.title:SetText(ns:L("SECTION_TRACKER") .. note)
+    windowFrame.secQuest.title:SetText(ns:L("SECTION_QUEST_AUTO") .. note)
+    return true
+end
+
 function SettingsDialog.buildFlatCheckbox(parent, x, y, onToggle)
     local rowWidget = CreateFrame("Button", nil, parent)
     rowWidget:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
@@ -597,6 +615,7 @@ function ns:CreateSettingsWindow()
     windowFrame.chkQuestSkip = questCheck(20, -487, "questSkipRisky")
     windowFrame.chkQuestBest = questCheck(245, -487, "questMarkBest")
     windowFrame.chkQuestSkipItems = questCheck(20, -510, "questSkipItems")
+    windowFrame.chkQuestAnnounce = questCheck(245, -510, "questPartyAnnounce")
 
     windowFrame.secStatus = SettingsDialog.buildSectionHeader(windowFrame, -541)
 
@@ -751,6 +770,9 @@ function ns:RefreshSettingsUI()
         windowFrame.chkQuestBest:SetChecked(savedDB.questMarkBest ~= false)
         SettingsDialog.setFittedLabel(windowFrame.chkQuestSkipItems, self:L("OPT_QUEST_SKIP_ITEMS"))
         windowFrame.chkQuestSkipItems:SetChecked(savedDB.questSkipItems == true)
+        SettingsDialog.setFittedLabel(windowFrame.chkQuestAnnounce, self:L("OPT_QUEST_ANNOUNCE"))
+        windowFrame.chkQuestAnnounce:SetChecked(savedDB.questPartyAnnounce == true)
+        SettingsDialog.syncQuestManagedRows(windowFrame)
 
         windowFrame.secStatus.title:SetText(self:L("SECTION_STATUS"))
         local hookedCount, posCount, scaleCount = self:ComputeManagedFrameStatistics()

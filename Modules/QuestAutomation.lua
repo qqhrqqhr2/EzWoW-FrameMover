@@ -28,7 +28,9 @@ local function plain(value)
 end
 
 -- Holding Shift while talking to the NPC turns everything off for that talk.
+-- With EzWoW - Quest loaded, that addon does all of this instead.
 local function paused()
+    if ns.IsQuestAddonActive and ns.IsQuestAddonActive() then return true end
     return IsShiftKeyDown and IsShiftKeyDown() and true or false
 end
 
@@ -251,6 +253,7 @@ end
 local function updateBestReward()
     hideBestMark()
     rewardWaiting = false
+    if ns.IsQuestAddonActive and ns.IsQuestAddonActive() then return end
     if db().questMarkBest == false then return end
     local rewards = rewardsShown()
     local buttons = rewards and rewards.RewardButtons

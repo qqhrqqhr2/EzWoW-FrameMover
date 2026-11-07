@@ -43,6 +43,7 @@ ns.DEFAULTS = {
     questAutoComplete = false,
     questSkipRisky = true,
     questSkipItems = false,
+    questPartyAnnounce = true,
     questMarkBest = true,
     positions = {},
     scales = {},
@@ -1223,12 +1224,6 @@ function ns:ScanUnhookedStandardFrames()
 end
 
 function ns:HookLazyFrameTriggers()
-    local talentsToggle = _G["EUI_ClassicTalentsToggle"]
-    if hasFrameObject(talentsToggle) then
-        FrameDragController.bindFrameScript(talentsToggle, "OnClick", function()
-            ns:ScanUnhookedStandardFrames()
-        end)
-    end
     if not self._hookedLazyTalentFuncs and type(hooksecurefunc) == "function" then
         self._hookedLazyTalentFuncs = true
         if type(_G.ToggleTalentFrame) == "function" then

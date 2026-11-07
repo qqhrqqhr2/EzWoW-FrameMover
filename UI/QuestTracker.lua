@@ -846,6 +846,7 @@ function ObjectiveTrackerController.queueDefaultTrackerVisibility()
 end
 
 function ns:ApplyDefaultTrackerVisibility()
+    if ns.IsQuestAddonActive and ns.IsQuestAddonActive() then return end
     local savedDB = self:InitializeDatabase()
     local shouldHide = (savedDB.enableTracker ~= false) and (savedDB.hideDefaultTracker ~= false)
 
@@ -1142,7 +1143,9 @@ function ObjectiveTrackerController.acquireTrackerRowWidget(index)
             if maxScrollOffset > 0 then
                 GameTooltip:AddLine(ns:L("TRACKER_TT_SCROLL"), STYLE.textSub[1], STYLE.textSub[2], STYLE.textSub[3])
             end
+            GameTooltip:AddDoubleLine(" ", "EzWoW - Frame Mover", 0, 0, 0, 0.5, 0.5, 0.5)
             GameTooltip:Show()
+            if _G.EzWoWTooltipTagSizer and _G.EzWoWTooltipTagSizer.Refit then pcall(_G.EzWoWTooltipTagSizer.Refit, GameTooltip) end
         end
         ObjectiveTrackerController.showQuestOverlay(self)
     end)
@@ -1576,6 +1579,8 @@ function ObjectiveTrackerController.prepareTrackerFrame()
 end
 
 function ns:UpdateQuestTracker()
+    -- EzWoW - Quest has the tracker now: this one is never built
+    if ns.IsQuestAddonActive and ns.IsQuestAddonActive() then return end
     local savedDB = self:InitializeDatabase()
     self:ApplyDefaultTrackerVisibility()
 
@@ -1903,6 +1908,10 @@ for _, eventFrame in ipairs({
 end
 
 trackerEvents:SetScript("OnEvent", function(_, event, arg1, arg2)
+    if ns.IsQuestAddonActive and ns.IsQuestAddonActive() then
+        if event == "PLAYER_LOGIN" then trackerEvents:UnregisterAllEvents() end
+        return
+    end
     if event == "UNIT_QUEST_LOG_CHANGED" and arg1 ~= "player" then
         return
     end

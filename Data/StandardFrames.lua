@@ -72,10 +72,6 @@ NS.STANDARD_FRAMES = {
             ["DressUpFrame.OutfitDetailsPanel"] = { Detachable = true },
         },
     },
-    EUI_ClassicSpellbook = {
-        UseSecureCursorDrag = true,
-    },
-    EUI_ClassicTalents = {},
     FriendsFrame = {
         SubFrames = {
             ["FriendsFrameBattlenetFrame.BroadcastFrame"] = { Detachable = true },

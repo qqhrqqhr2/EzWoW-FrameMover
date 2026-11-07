@@ -87,6 +87,11 @@ function ns:InitializeDatabase()
     end
     if type(savedDB.positions) ~= "table" then savedDB.positions = {} end
     if type(savedDB.scales) ~= "table" then savedDB.scales = {} end
+    -- party quest messages became on by default; saves from the first test build had it off
+    if not savedDB.questAnnounceDefaultOn then
+        savedDB.questAnnounceDefaultOn = true
+        savedDB.questPartyAnnounce = true
+    end
 
     for entryKey, entryValue in pairs(savedDB.positions) do
         if type(entryValue) ~= "table" then
@@ -98,6 +103,41 @@ function ns:InitializeDatabase()
 
     self.db = savedDB
     return savedDB
+end
+
+-- The quest tracker, quest automation and party messages moved to EzWoW - Quest.
+-- While that addon is loaded (or, before login, is about to load) the copies
+-- here stay off so nothing runs twice.
+local QUEST_ADDON = "EzWoW-Quest"
+local questAddonActive
+
+function ns.IsQuestAddonActive()
+    if questAddonActive ~= nil then return questAddonActive end
+    local isLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or _G.IsAddOnLoaded
+    if type(isLoaded) == "function" then
+        local ok, loaded = pcall(isLoaded, QUEST_ADDON)
+        if ok and loaded then
+            questAddonActive = true
+            return true
+        end
+    end
+    if IsLoggedIn and IsLoggedIn() then
+        questAddonActive = false
+        return false
+    end
+    -- still loading: it loads after this addon, so ask whether it is going to
+    local getState = C_AddOns and C_AddOns.GetAddOnEnableState
+    local isLoadable = C_AddOns and C_AddOns.IsAddOnLoadable
+    if type(getState) == "function" then
+        local okName, character = pcall(UnitName, "player")
+        local okState, state = pcall(getState, QUEST_ADDON, okName and character or nil)
+        if okState and type(state) == "number" and state > 0 then
+            if type(isLoadable) ~= "function" then return true end
+            local okLoad, loadable = pcall(isLoadable, QUEST_ADDON)
+            return (not okLoad) or (loadable and true or false)
+        end
+    end
+    return false
 end
 
 function ns:PrintMsg(msg)

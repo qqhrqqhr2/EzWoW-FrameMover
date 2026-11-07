@@ -1,13 +1,9 @@
-# v2.0.8
+# v2.0.9
 
 ### 한국어
-- 퀘스트 보상 선택 시 판매 가격이 가장 높은 보상을 표시합니다(보상 창·퀘스트 목록·지도).
-- NPC 대화 자동 선택이 같은 대화를 반복하지 않도록 고쳤습니다.
-- 접속할 때마다 창 위치가 조금씩 어긋나던 문제를 수정했습니다.
-- 전투 중 퀘스트 추적기에서 나던 오류를 수정했습니다.
+- 퀘스트 수락, 목표 진행, 목표 달성, 퀘스트 완료를 파티 채팅에 알리는 설정을 추가했습니다(기본으로 켜짐, 공격대에서는 알리지 않음).
+- 퀘스트 추적기 툴팁 아래에 애드온 이름을 작은 회색 글씨로 표시하도록 했습니다.
 
 ### English
-- The quest reward that sells for the most is marked (reward window, quest log and map).
-- Automatic gossip selection no longer repeats the same option.
-- Fixed frames slowly drifting from their saved position between sessions.
-- Fixed errors from the quest tracker in combat.
+- Added a setting to announce quest accepts, objective progress, finished objectives and turn-ins in party chat (on by default, never in raids).
+- Quest tracker tooltips now show the addon name in small gray text at the bottom.

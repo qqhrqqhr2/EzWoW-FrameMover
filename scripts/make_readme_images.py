@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 PAGE_W = 1600
@@ -667,13 +668,43 @@ def find_chrome():
     sys.exit("Chrome not found (set CHROME=<path to chrome>)")
 
 
+def stop(proc):
+    """Ends Chrome and its child processes."""
+    if proc.poll() is None:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            proc.kill()
+    proc.wait()
+
+
+def screenshot(cmd, out_png, timeout=180):
+    """Runs headless Chrome until the screenshot file is written (Chrome may not exit by itself)."""
+    if out_png.exists():
+        out_png.unlink()
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        start, last = time.time(), -1
+        while time.time() - start < timeout:
+            if out_png.exists():
+                size = out_png.stat().st_size
+                if size > 0 and size == last:
+                    return
+                last = size
+            elif proc.poll() is not None:
+                raise RuntimeError(f"Chrome ended without writing {out_png}")
+            time.sleep(0.5)
+        raise TimeoutError(f"no screenshot after {timeout}s: {out_png}")
+    finally:
+        stop(proc)
+
+
 def render(chrome, html_text, out_png, height, tmp):
     page = Path(tmp) / (out_png.stem + ".html")
     page.write_text(html_text, encoding="utf-8")
-    subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-                    f"--user-data-dir={Path(tmp) / 'chrome_profile'}", f"--window-size={PAGE_W},{int(height)}",
-                    "--virtual-time-budget=2000", f"--screenshot={out_png}", page.as_uri()],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    screenshot([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+                f"--user-data-dir={Path(tmp) / 'chrome_profile'}", f"--window-size={PAGE_W},{int(height)}",
+                "--virtual-time-budget=2000", f"--screenshot={out_png}", page.as_uri()], out_png)
 
 
 def main(root: Path):

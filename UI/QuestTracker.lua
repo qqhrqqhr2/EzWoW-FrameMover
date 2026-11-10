@@ -746,6 +746,9 @@ function ObjectiveTrackerController.launchQuestInLog(questData)
         end
         return
     end
+    -- with the gamepad on, the quest log opened by addon code taints the
+    -- gamepad navigation (Libs/EzWoWGamePad): left to the player
+    if ns.GamePad and ns.GamePad.IsActive() then return end
 
     if type(QuestMapFrame_OpenToQuestDetails) == "function" and not (_G.QuestLogFrame or _G.ClassicQuestLog or _G.QuestLogExFrame) then
         pcall(QuestMapFrame_OpenToQuestDetails, questData.questID)

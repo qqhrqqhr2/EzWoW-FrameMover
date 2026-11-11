@@ -120,3 +120,9 @@ WoW Forever의 움직일 수 없던 기본 창을 마우스로 끌어 옮기고,
 - `/ezfm scan` (`/창이동 스캔`) — 열려 있거나 새로 로드된 기본 창 다시 찾기
 
 지원 언어: English, 한국어, Deutsch, Français, Español, Русский, 简体中文, 繁體中文.
+
+---
+
+**Support:** If you find this addon useful, you can support its development. [Buy Me a Coffee ☕](https://buymeacoffee.com/qqhrqqhr2)
+
+**후원:** 애드온이 도움이 되셨다면 개발 후원으로 응원해 주세요. [Buy Me a Coffee ☕](https://buymeacoffee.com/qqhrqqhr2)

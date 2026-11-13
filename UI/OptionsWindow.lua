@@ -790,13 +790,22 @@ function ns:RefreshSettingsUI()
         SettingsDialog.setFittedLabel(windowFrame.btnDonate, self:L("BTN_DONATE"))
     end
 
-    if self.UpdateQuestTracker then
+    if self.ScheduleTrackerUpdate then
+        self:ScheduleTrackerUpdate()
+    elseif self.UpdateQuestTracker then
         self:UpdateQuestTracker()
     end
 
     if self.canvasPanel and self.canvasPanel.RefreshTexts then
         self.canvasPanel:RefreshTexts()
     end
+end
+
+-- moving or scaling a window can only change the status counts
+function ns:RefreshSettingsStatus()
+    if not (settingsFrame and settingsFrame:IsShown()) then return end
+    local hookedCount, posCount, scaleCount = self:ComputeManagedFrameStatistics()
+    settingsFrame.statusText:SetText(string.format(self:L("STATUS_FORMAT"), hookedCount, posCount, scaleCount))
 end
 
 function ns:RescanFramesWithFeedback()

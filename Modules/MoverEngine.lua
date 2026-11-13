@@ -81,26 +81,29 @@ function FrameDragController.readCurrentFrameAnchors(frame)
     local numPoints = frame:GetNumPoints()
     if not numPoints or numPoints == 0 then return nil end
 
-    local pts = {}
+    -- the points go to SavedVariables, so they hold names only; live regions are returned apart
+    local pts, live = {}, {}
     for index = 1, numPoints do
         local anchorPoint, relativeFrame, relativePoint, offX, offY = frame:GetPoint(index)
         if anchorPoint then
-            local anchorTarget = {
+            local relName = ns:GetFrameName(relativeFrame)
+            if not relName and type(relativeFrame) == "table" and relativeFrame.GetName then
+                local okName, nameVal = pcall(relativeFrame.GetName, relativeFrame)
+                if okName and type(nameVal) == "string" and nameVal ~= "" then relName = nameVal end
+            end
+            pts[#pts + 1] = {
                 anchorPoint = anchorPoint,
-                relativeFrame = relativeFrame,
+                relativeFrame = relName,
+                relativeFrameName = relName,
+                hasRelative = (relativeFrame ~= nil) or nil,
                 relativePoint = relativePoint or anchorPoint,
                 offX = offX or 0,
                 offY = offY or 0,
             }
-            if ns:GetFrameName(relativeFrame) then
-                anchorTarget.relativeFrameName = ns:GetFrameName(relativeFrame)
-            elseif type(relativeFrame) == "table" and relativeFrame.GetName and relativeFrame:GetName() then
-                anchorTarget.relativeFrameName = relativeFrame:GetName()
-            end
-            pts[#pts + 1] = anchorTarget
+            live[#pts] = relativeFrame
         end
     end
-    return pts
+    return pts, live
 end
 
 -- Saved offsets are kept in UIParent units: frame units times the frame's effective scale
@@ -175,11 +178,34 @@ function FrameDragController.computeAbsoluteScreenAnchor(frame)
     }
 end
 
-function FrameDragController.applySavedFrameAnchors(frame, framePoints, raw, skipUI)
+function FrameDragController.applySavedFrameAnchors(frame, framePoints, raw, skipUI, liveFrames)
     if not frame then return false end
     if hasInCombat() and frame:IsProtected() then return false end
 
     if framePoints and framePoints[1] then
+        -- resolve every anchor first; one that cannot be resolved is skipped, not anchored to the parent
+        local resolved, anyOk = {}, false
+        for i, entry in ipairs(framePoints) do
+            local rel = (liveFrames and liveFrames[i]) or entry.relativeFrame
+            local wanted = entry.hasRelative or type(rel) == "string"
+            if type(rel) == "string" then
+                if rel == "EzWoW_FrameMover_FakeUIParent" then
+                    rel = secureRootParent
+                else
+                    rel = _G[rel] or ns:GetFrameFromName(rel)
+                end
+            end
+            if rel == UIParent then
+                rel = secureRootParent
+            end
+            local isOk = (rel == nil and not wanted) or (type(rel) == "table" and type(rel.GetObjectType) == "function")
+            if isOk then
+                resolved[i] = rel or false
+                anyOk = true
+            end
+        end
+        if not anyOk then return false end
+
         local fdVal = ns.FrameData[frame]
         local useSecure = secureFrame and secureFrame.Execute and not hasInCombat() and (fdVal and fdVal.UseSecureCursorDrag)
         local assignPoint = frame.SetPointBase or frame.SetPoint
@@ -200,61 +226,53 @@ function FrameDragController.applySavedFrameAnchors(frame, framePoints, raw, ski
         end
         ignoreSetPointHook = false
 
-        for _, anchorPointEntry in ipairs(framePoints) do
-            ignoreSetPointHook = true
-            local relativeFrame = anchorPointEntry.relativeFrame
-            if type(relativeFrame) == "string" then
-                if relativeFrame == "EzWoW_FrameMover_FakeUIParent" then
-                    relativeFrame = secureRootParent
-                else
-                    relativeFrame = _G[relativeFrame] or ns:GetFrameFromName(relativeFrame)
+        for i, anchorPointEntry in ipairs(framePoints) do
+            if resolved[i] ~= nil then
+                ignoreSetPointHook = true
+                local relativeFrame = resolved[i] or nil
+
+                local hasRelExplicitProtected = false
+                if relativeFrame and relativeFrame.IsProtected then
+                    local isCallOk, _, explicit = pcall(relativeFrame.IsProtected, relativeFrame)
+                    hasRelExplicitProtected = isCallOk and explicit or false
                 end
-            end
-            if relativeFrame == UIParent then
-                relativeFrame = secureRootParent
-            end
 
-            local hasRelExplicitProtected = false
-            if relativeFrame and relativeFrame.IsProtected then
-                local isCallOk, _, explicit = pcall(relativeFrame.IsProtected, relativeFrame)
-                hasRelExplicitProtected = isCallOk and explicit or false
-            end
-
-            local executedSecure = false
-            if secureFrame and secureFrame.Execute and not hasInCombat() and (useSecure or not relativeFrame or hasRelExplicitProtected) then
-                executedSecure = pcall(function()
-                    secureFrame:SetFrameRef("frame", frame)
-                    if relativeFrame then
-                        secureFrame:SetFrameRef("relativeFrame", relativeFrame)
-                    end
-                    secureFrame:SetAttribute("hasRelativeFrame", relativeFrame and true or false)
-                    secureFrame:SetAttribute("anchorPoint", anchorPointEntry.anchorPoint)
-                    secureFrame:SetAttribute("relativePoint", anchorPointEntry.relativePoint or anchorPointEntry.anchorPoint)
-                    secureFrame:SetAttribute("offX", (anchorPointEntry.offX or 0) / calculateCanvasScale)
-                    secureFrame:SetAttribute("offY", (anchorPointEntry.offY or 0) / calculateCanvasScale)
-                    secureFrame:Execute([[
-                        local frame = self:GetFrameRef('frame');
-                        local relativeFrame;
-                        if self:GetAttribute('hasRelativeFrame') then
-                            relativeFrame = self:GetFrameRef('relativeFrame');
+                local executedSecure = false
+                if secureFrame and secureFrame.Execute and not hasInCombat() and (useSecure or not relativeFrame or hasRelExplicitProtected) then
+                    executedSecure = pcall(function()
+                        secureFrame:SetFrameRef("frame", frame)
+                        if relativeFrame then
+                            secureFrame:SetFrameRef("relativeFrame", relativeFrame)
                         end
-                        local anchorPoint = self:GetAttribute('anchorPoint');
-                        local relativePoint = self:GetAttribute('relativePoint');
-                        local offX = self:GetAttribute('offX');
-                        local offY = self:GetAttribute('offY');
-                        frame:SetPoint(anchorPoint, relativeFrame, relativePoint, offX, offY);
-                    ]])
-                end)
+                        secureFrame:SetAttribute("hasRelativeFrame", relativeFrame and true or false)
+                        secureFrame:SetAttribute("anchorPoint", anchorPointEntry.anchorPoint)
+                        secureFrame:SetAttribute("relativePoint", anchorPointEntry.relativePoint or anchorPointEntry.anchorPoint)
+                        secureFrame:SetAttribute("offX", (anchorPointEntry.offX or 0) / calculateCanvasScale)
+                        secureFrame:SetAttribute("offY", (anchorPointEntry.offY or 0) / calculateCanvasScale)
+                        secureFrame:Execute([[
+                            local frame = self:GetFrameRef('frame');
+                            local relativeFrame;
+                            if self:GetAttribute('hasRelativeFrame') then
+                                relativeFrame = self:GetFrameRef('relativeFrame');
+                            end
+                            local anchorPoint = self:GetAttribute('anchorPoint');
+                            local relativePoint = self:GetAttribute('relativePoint');
+                            local offX = self:GetAttribute('offX');
+                            local offY = self:GetAttribute('offY');
+                            frame:SetPoint(anchorPoint, relativeFrame, relativePoint, offX, offY);
+                        ]])
+                    end)
+                end
+                if not executedSecure then
+                    pcall(assignPoint, frame, anchorPointEntry.anchorPoint, relativeFrame, anchorPointEntry.relativePoint or anchorPointEntry.anchorPoint, (anchorPointEntry.offX or 0) / calculateCanvasScale, (anchorPointEntry.offY or 0) / calculateCanvasScale)
+                end
+                ignoreSetPointHook = false
             end
-            if not executedSecure then
-                pcall(assignPoint, frame, anchorPointEntry.anchorPoint, relativeFrame, anchorPointEntry.relativePoint or anchorPointEntry.anchorPoint, (anchorPointEntry.offX or 0) / calculateCanvasScale, (anchorPointEntry.offY or 0) / calculateCanvasScale)
-            end
-            ignoreSetPointHook = false
         end
     end
 
-    if not skipUI and ns.RefreshSettingsUI then
-        ns:RefreshSettingsUI()
+    if not skipUI and ns.RefreshSettingsStatus then
+        ns:RefreshSettingsStatus()
     end
     return true
 end
@@ -270,7 +288,7 @@ function ns:GetFrameScalePct(frame)
     return math.floor((FrameDragController.resolveFrameScale(frame) or 1) * 100 + 0.5)
 end
 
-function FrameDragController.assignFrameScaleSubs(frame, oldScale, newScale)
+function FrameDragController.assignFrameScaleSubs(frame, oldScale, newScale, savedRatio)
     local fdVal = ns.FrameData[frame]
     if not fdVal or not fdVal.SubFrames then return end
     for _, subData in pairs(fdVal.SubFrames) do
@@ -281,30 +299,50 @@ function FrameDragController.assignFrameScaleSubs(frame, oldScale, newScale)
                     pcall(subFrame.SetScale, subFrame, (subFrame:GetScale() / oldScale) * newScale)
                 elseif not subData.ManuallyScaleWithParent and subData.storage.detached then
                     pcall(subFrame.SetScale, subFrame, (oldScale * subFrame:GetScale()) / newScale)
+                    -- keep the saved own scale in step so the next show keeps the same on-screen size
+                    local subName = subData.storage.frameName
+                    if savedRatio and subName then
+                        local savedDB = ns:InitializeDatabase()
+                        local value = (savedDB.scales[subName] or ns.SessionScales[subName] or 1.0) * savedRatio
+                        if math.abs(value - 1.0) < 0.005 then value = nil end
+                        savedDB.scales[subName] = value
+                        ns.SessionScales[subName] = value
+                    end
                 else
-                    FrameDragController.assignFrameScaleSubs(subFrame, oldScale, newScale)
+                    FrameDragController.assignFrameScaleSubs(subFrame, oldScale, newScale, savedRatio)
                 end
             end
         end
     end
 end
 
-function FrameDragController.applyClampedFrameScale(frame, frameScale, showToast)
+function FrameDragController.applyClampedFrameScale(frame, frameScale, showToast, isOwnScale)
     if not frame then return false end
     if hasInCombat() and frame:IsProtected() then return true end
     local fdVal = ns.FrameData[frame]
     if not fdVal or not fdVal.storage then return false end
 
     local oldScale = FrameDragController.resolveFrameScale(frame)
-    local newScale = math.floor(frameScale * 100 + 0.5) / 100
-    if newScale < MIN_SCALE then newScale = MIN_SCALE end
-    if newScale > MAX_SCALE then newScale = MAX_SCALE end
+    local newScale
+    if isOwnScale then
+        -- saved values hold the frame's own scale (for a detached sub-frame: wanted / parent scale)
+        newScale = tonumber(frameScale) or 1
+        if newScale < MIN_SCALE / MAX_SCALE then newScale = MIN_SCALE / MAX_SCALE end
+        if newScale > MAX_SCALE / MIN_SCALE then newScale = MAX_SCALE / MIN_SCALE end
+        if fdVal.ManuallyScaleWithParent and fdVal.storage.frameParent and not fdVal.storage.detached then
+            newScale = FrameDragController.resolveFrameScale(fdVal.storage.frameParent)
+        end
+    else
+        newScale = math.floor(frameScale * 100 + 0.5) / 100
+        if newScale < MIN_SCALE then newScale = MIN_SCALE end
+        if newScale > MAX_SCALE then newScale = MAX_SCALE end
 
-    if fdVal.storage.detached and fdVal.storage.frameParent then
-        local parentScale = FrameDragController.resolveFrameScale(fdVal.storage.frameParent)
-        newScale = fdVal.ManuallyScaleWithParent and newScale or (newScale / parentScale)
-    elseif fdVal.ManuallyScaleWithParent and fdVal.storage.frameParent then
-        newScale = FrameDragController.resolveFrameScale(fdVal.storage.frameParent)
+        if fdVal.storage.detached and fdVal.storage.frameParent then
+            local parentScale = FrameDragController.resolveFrameScale(fdVal.storage.frameParent)
+            newScale = fdVal.ManuallyScaleWithParent and newScale or (newScale / parentScale)
+        elseif fdVal.ManuallyScaleWithParent and fdVal.storage.frameParent then
+            newScale = FrameDragController.resolveFrameScale(fdVal.storage.frameParent)
+        end
     end
 
     local savedDB = ns:InitializeDatabase()
@@ -333,13 +371,18 @@ function FrameDragController.applyClampedFrameScale(frame, frameScale, showToast
     if not scaledSecure or math.abs((frame:GetScale() or 1) - newScale) > 0.01 then
         pcall(frame.SetScale, frame, newScale)
     end
-    FrameDragController.assignFrameScaleSubs(frame, oldScale, newScale)
+    -- sub-frames follow the on-screen (effective) scale, not the own scale of a detached frame
+    local newEffective = FrameDragController.resolveFrameScale(frame) or newScale
+    if not newEffective or newEffective <= 0 then newEffective = newScale end
+    -- only a user rescale moves saved sub-frame values; on a show re-apply oldScale may be stale
+    local savedRatio = (not isOwnScale and oldScale and oldScale > 0) and (oldScale / newEffective) or nil
+    FrameDragController.assignFrameScaleSubs(frame, oldScale, newEffective, savedRatio)
 
     if showToast and ns.ShowScaleToast then
-        ns:ShowScaleToast(frameName, math.floor(newScale * 100 + 0.5))
+        ns:ShowScaleToast(frameName, math.floor((FrameDragController.resolveFrameScale(frame) or newScale) * 100 + 0.5))
     end
-    if ns.RefreshSettingsUI then
-        ns:RefreshSettingsUI()
+    if ns.RefreshSettingsStatus then
+        ns:RefreshSettingsStatus()
     end
     return true
 end
@@ -526,7 +569,9 @@ function doOnMouseDown(frame, button, moveHandle)
 
     if button == "LeftButton" then
         if not moveHandle and IsAltKeyDown and IsAltKeyDown() and fdVal.Detachable and not fdVal.storage.detached then
-            fdVal.storage.points.detachPoints = FrameDragController.readCurrentFrameAnchors(frame)
+            local detachPts, detachLive = FrameDragController.readCurrentFrameAnchors(frame)
+            fdVal.storage.points.detachPoints = detachPts
+            fdVal.storage.detachLive = detachLive -- runtime only, never saved
             fdVal.storage.detached = true
             returnValue = true
             if PlaySound then
@@ -621,8 +666,9 @@ function doOnMouseUp(frame, button, moveHandle)
 
                 local fullReset = false
                 if hasAlt and fdVal.storage.detached then
-                    if FrameDragController.applySavedFrameAnchors(frame, fdVal.storage.points.detachPoints, true) then
+                    if FrameDragController.applySavedFrameAnchors(frame, fdVal.storage.points.detachPoints, true, nil, fdVal.storage.detachLive) then
                         fdVal.storage.points.detachPoints = nil
+                        fdVal.storage.detachLive = nil
                         fdVal.storage.detached = nil
                         returnValue = true
                         fullReset = true
@@ -703,10 +749,11 @@ function handleFrameShowEvent(frame, skipNextFrame)
 
     local savedDB = ns:InitializeDatabase()
     local frameName = ns:GetFrameName(frame)
+    ns:SetupPointStorage(frame) -- restores storage.detached before the saved scale is read
     if frameName and savedDB.scales[frameName] then
-        FrameDragController.applyClampedFrameScale(frame, savedDB.scales[frameName], false)
+        FrameDragController.applyClampedFrameScale(frame, savedDB.scales[frameName], false, true)
     elseif frameName and ns.SessionScales[frameName] then
-        FrameDragController.applyClampedFrameScale(frame, ns.SessionScales[frameName], false)
+        FrameDragController.applyClampedFrameScale(frame, ns.SessionScales[frameName], false, true)
     end
 
     onSetPoint(frame)
@@ -1375,6 +1422,9 @@ function ns:ResetAllScales()
             end
         end
     end
+    -- the parent resets above stored keep-size values for detached sub-frames; reset all means none
+    wipe(savedDB.scales)
+    wipe(self.SessionScales)
     if self.UpdateQuestTracker then
         self:UpdateQuestTracker()
     end
@@ -1563,10 +1613,11 @@ if type(hooksecurefunc) == "function" and type(_G.UpdateScaleForFit) == "functio
         if hasInCombat() and frame:IsProtected() then return end
         local savedDB = ns:InitializeDatabase()
         local frameName = ns:GetFrameName(frame)
+        ns:SetupPointStorage(frame)
         if frameName and savedDB.scales[frameName] then
-            FrameDragController.applyClampedFrameScale(frame, savedDB.scales[frameName], false)
+            FrameDragController.applyClampedFrameScale(frame, savedDB.scales[frameName], false, true)
         elseif frameName and ns.SessionScales[frameName] then
-            FrameDragController.applyClampedFrameScale(frame, ns.SessionScales[frameName], false)
+            FrameDragController.applyClampedFrameScale(frame, ns.SessionScales[frameName], false, true)
         end
     end)
 end

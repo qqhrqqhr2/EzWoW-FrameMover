@@ -99,6 +99,15 @@ function ns:InitializeDatabase()
         elseif type(entryValue[1]) == "table" and not entryValue.dragPoints then
             savedDB.positions[entryKey] = { dragPoints = entryValue, dragged = true }
         end
+        -- older saves held live frame objects here; keep only the frame name
+        if type(entryValue) == "table" and type(entryValue.detachPoints) == "table" then
+            for _, pt in ipairs(entryValue.detachPoints) do
+                if type(pt) == "table" and pt.relativeFrame ~= nil and type(pt.relativeFrame) ~= "string" then
+                    pt.relativeFrame = (type(pt.relativeFrameName) == "string") and pt.relativeFrameName or nil
+                    pt.hasRelative = true
+                end
+            end
+        end
     end
 
     self.db = savedDB
@@ -220,7 +229,6 @@ function ns:SetupPointStorage(frame)
         local relFrame = relName and self:GetFrameFromName(relName)
         if relFrame then
             fdVal.storage.detached = true
-            fdVal.storage.points.detachPoints[1].relativeFrame = relFrame
         else
             wipe(fdVal.storage.points)
         end

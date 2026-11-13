@@ -9,11 +9,9 @@ CurseForge summary (KO): 움직일 수 없던 기본 창을 끌어 옮기고 Ctr
 
 Drag the fixed default windows of WoW Forever anywhere, keep them where you put them, and scale them with Ctrl + mouse wheel. It also includes a scrollable quest tracker, quest automation and party progress messages.
 
-![Moving windows and the quest tracker](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_en.png)
+![Settings window](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_en.png)
 
-![Settings window](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/settings_en.png)
-
-*Mock-ups rebuilt from the window sizes, coordinates, colours and strings in the addon code. Quests and names are made up.*
+*In-game screenshots (WoW Forever, Korean client). Character and player names and chat text are blurred.*
 
 ## Features
 
@@ -68,11 +66,9 @@ Languages: English, 한국어, Deutsch, Français, Español, Русский, 简
 
 WoW Forever의 움직일 수 없던 기본 창을 마우스로 끌어 옮기고, 그 위치를 저장하며, Ctrl + 마우스 휠로 크기를 바꾸는 애드온입니다. 스크롤형 퀘스트 추적기, 퀘스트 자동화, 파티 진행 알림도 들어 있습니다.
 
-![창 이동과 퀘스트 추적기](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_ko.png)
+![설정창](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_ko.png)
 
-![설정창](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/settings_ko.png)
-
-*애드온 코드의 창 크기·좌표·색상·문구로 재현한 예시 화면입니다. 퀘스트와 이름은 지어낸 예시입니다.*
+*실제 게임 화면입니다(WoW Forever, 한국어 클라이언트). 캐릭터 · 다른 플레이어 이름과 채팅 내용은 가렸습니다.*
 
 ## 기능
 

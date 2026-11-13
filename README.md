@@ -21,11 +21,9 @@ WoW Forever (`Interface: 16001`) · `/ezfm`
 
 ### 화면 미리보기
 
-![창 이동과 퀘스트 추적기](docs/images/ui_ko.png)
+![설정창](docs/images/ui_ko.png)
 
-![설정창](docs/images/settings_ko.png)
-
-> 이미지는 애드온 코드의 창 크기·좌표·색상·문구로 재현한 **예시 화면**입니다. 캐릭터 창은 기본 게임 창을 단순화해 그린 것이고, 퀘스트와 캐릭터 이름은 지어낸 예시입니다.
+> 실제 게임 화면입니다(WoW Forever, 한국어 클라이언트). 캐릭터 · 다른 플레이어 이름과 채팅 내용은 가렸습니다.
 
 ### 설치
 
@@ -33,7 +31,7 @@ WoW Forever (`Interface: 16001`) · `/ezfm`
 2. 캐릭터 선택 화면의 **애드온** 목록에서 켭니다.
 3. 아무 기본 창(캐릭터 창 `C` 등)을 열고 끌어 보세요. 설정은 `/ezfm`.
 
-### 사용법 (위 그림의 번호)
+### 사용법
 
 | 번호 | 기능 | 설명 |
 |---|---|---|
@@ -150,11 +148,9 @@ Frame Mover lets you **drag Blizzard's fixed windows anywhere** and remembers wh
 
 ### Screenshots
 
-![Moving windows and the quest tracker](docs/images/ui_en.png)
+![Settings window](docs/images/ui_en.png)
 
-![Settings window](docs/images/settings_en.png)
-
-> These are **mock-ups** rebuilt from the window sizes, coordinates, colours and strings in the code. The character window is a simplified drawing of the default game window; quests and character names are made up.
+> In-game screenshots (WoW Forever, Korean client). Character and player names and chat text are blurred.
 
 ### Installation
 
@@ -162,7 +158,7 @@ Frame Mover lets you **drag Blizzard's fixed windows anywhere** and remembers wh
 2. Enable it in the **AddOns** list on the character select screen.
 3. Open any default window (e.g. Character, `C`) and drag it. Settings: `/ezfm`.
 
-### How to use (numbers in the picture)
+### How to use
 
 | No. | Feature | Description |
 |---|---|---|

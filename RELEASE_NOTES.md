@@ -1,7 +1,7 @@
-# v2.0.16
+# v2.0.17
 
 ### 한국어
-- 퀘스트 추적기에서 퀘스트 로그를 열 때 지도 오류가 날 수 있던 경로를 막았습니다.
+- 공유 기록의 NPC·오브젝트 이름이 언어 설정에 맞게 나오도록 고쳤습니다.
 
 ### English
-- Removed a quest tracker path that could cause map errors when opening the quest log.
+- Names of NPCs and objects in shared records now follow the language setting.

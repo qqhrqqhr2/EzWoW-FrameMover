@@ -750,10 +750,11 @@ function ObjectiveTrackerController.launchQuestInLog(questData)
     -- gamepad navigation (Libs/EzWoWGamePad): left to the player
     if ns.GamePad and ns.GamePad.IsActive() then return end
 
-    if type(QuestMapFrame_OpenToQuestDetails) == "function" and not (_G.QuestLogFrame or _G.ClassicQuestLog or _G.QuestLogExFrame) then
-        pcall(QuestMapFrame_OpenToQuestDetails, questData.questID)
-        return
-    end
+    -- the World Map's quest log opens only through the secure overlay: opened
+    -- from addon code, the quest log keeps the quest and draws it again on
+    -- every quest update from tainted code, and the map's own pins are then
+    -- blocked in combat (SetPassThroughButtons)
+    if not _G.QuestLogFrame then return end
 
     local logIndex = questData.logIndex
     if (not logIndex or logIndex <= 0) and C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
@@ -772,7 +773,7 @@ function ObjectiveTrackerController.launchQuestInLog(questData)
         end
     end
 
-    local qFrame = _G.QuestLogExFrame or _G.ClassicQuestLog or _G.QuestLogFrame
+    local qFrame = _G.QuestLogFrame
     if qFrame then
         if not qFrame:IsShown() and type(ShowUIPanel) == "function" then
             pcall(ShowUIPanel, qFrame)
@@ -783,8 +784,6 @@ function ObjectiveTrackerController.launchQuestInLog(questData)
         if type(QuestLog_Update) == "function" then
             pcall(QuestLog_Update)
         end
-    elseif type(ToggleQuestLog) == "function" then
-        pcall(ToggleQuestLog)
     end
 end
 

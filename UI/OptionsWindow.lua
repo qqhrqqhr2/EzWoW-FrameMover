@@ -442,6 +442,8 @@ function ns:CreateSettingsWindow()
     if settingsFrame then return settingsFrame end
 
     local windowFrame = CreateFrame("Frame", "EzWoWFrameMoverSettings", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+    -- (taller than the screen: shrunk to fit, Libs/EzWoWGamePad)
+    if ns.GamePad and ns.GamePad.KeepOnScreen then ns.GamePad.KeepOnScreen(windowFrame) end
     windowFrame:SetSize(480, 779)
     windowFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     windowFrame:SetFrameStrata("FULLSCREEN_DIALOG")

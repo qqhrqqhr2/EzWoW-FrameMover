@@ -174,6 +174,8 @@ NS.STANDARD_FRAMES = {
     QuickKeybindFrame = {},
     ReadyCheckFrame = {},
     SettingsPanel = {},
+    -- the world refresh (layer change) notice above the chat window
+    ShardTransferImminentFrame = {},
     SocialUIFrame = {},
     SpellBookFrame = {},
     SplashFrame = {},

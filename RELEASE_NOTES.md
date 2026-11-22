@@ -1,7 +1,7 @@
-# v2.0.28
+# v2.0.29
 
 ### 한국어
-- 게임의 채팅 채널 창을 열 때 "조금 천천히" 경고가 뜨던 문제를 수정했습니다.
+- 퀘스트 보상 아이템 정보가 늦게 들어오면 가장 좋은 보상 표시가 멈추던 문제를 수정했습니다.
 
 ### English
-- Fixed a "slow down" warning when opening the game's chat channel window.
+- Fixed the best quest reward mark stopping when reward details arrived late.

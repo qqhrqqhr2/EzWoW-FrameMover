@@ -9,7 +9,7 @@ CurseForge summary (KO): 움직일 수 없던 기본 창을 끌어 옮기고 Ctr
 
 Drag the fixed default windows of WoW Forever anywhere, keep them where you put them, and scale them with Ctrl + mouse wheel. It also includes a scrollable quest tracker, quest automation and party progress messages.
 
-![Settings window](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_en.png)
+![Settings window](https://raw.githubusercontent.com/ezwow-addons/EzWoW-FrameMover/master/docs/images/ui_en.png)
 
 *In-game screenshots with the addon set to English. The game client is Korean, so game text such as zone, item and spell names stays Korean. Character and player names and chat text are blurred.*
 
@@ -66,7 +66,7 @@ Languages: English, 한국어, Deutsch, Français, Español, Русский, 简
 
 WoW Forever의 움직일 수 없던 기본 창을 마우스로 끌어 옮기고, 그 위치를 저장하며, Ctrl + 마우스 휠로 크기를 바꾸는 애드온입니다. 스크롤형 퀘스트 추적기, 퀘스트 자동화, 파티 진행 알림도 들어 있습니다.
 
-![설정창](https://raw.githubusercontent.com/qqhrqqhr2/EzWoW-FrameMover/master/docs/images/ui_ko.png)
+![설정창](https://raw.githubusercontent.com/ezwow-addons/EzWoW-FrameMover/master/docs/images/ui_ko.png)
 
 *실제 게임 화면입니다(WoW Forever, 한국어 클라이언트). 캐릭터 · 다른 플레이어 이름과 채팅 내용은 가렸습니다.*
 

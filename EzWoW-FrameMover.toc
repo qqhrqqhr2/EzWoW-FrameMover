@@ -21,7 +21,7 @@
 ## Notes-zhCN: 自由拖拽移动默认界面窗口、保存位置并通过 Ctrl+滚轮缩放窗口大小。(/ezfm)
 ## Notes-zhTW: 自由拖曳移動預設介面視窗、儲存位置並透過 Ctrl+滾輪縮放視窗大小。(/ezfm)
 ## X-License: GPL-3.0
-## Author: qqhrqqhr2
+## Author: ezwow-addons
 ## Version: 2.0.29
 ## Category: EzWoW
 ## IconTexture: Interface\AddOns\EzWoW-FrameMover\Media\Icon
